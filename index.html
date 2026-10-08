@@ -361,6 +361,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
           <text class="burst-text" x="640" y="690" font-size="64" style="fill:#7a8fb0;stroke-width:7px" id="z3">Z</text>
         </g>
         <g id="foodG" opacity="0"></g>
+        <g id="tearG" pointer-events="none" opacity="0"></g>
         <g id="confG" pointer-events="none"></g>
         <text id="burst" class="burst-text" x="640" y="500" font-size="78" opacity="0" style="fill:var(--burst)">ハクション！</text>
         <text id="sfx" class="burst-text" x="0" y="0" font-size="54" opacity="0" style="fill:var(--burst);stroke-width:11px"></text>
@@ -1433,6 +1434,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     if (k === "stretch" || k === "jelly") sndBoing(); else sndPop();
     vibrate(20);
   }
+  var cryT = 0;
+  function startCry(now) { mode = "cry"; modeT0 = now; cryT = 0; sndSniff(); }
   function startSneeze(now) { mode = "sneeze"; modeT0 = now; spawned = false; sndSniff(); }
   function feed(id) {
     var now = performance.now();
@@ -1608,6 +1611,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   });
 
   /* ---------- main loop ---------- */
+  var tearK = 0, tearG = $("tearG"), tearEls = [];
+  (function () { for (var i = 0; i < 6; i++) { var c = document.createElementNS("http://www.w3.org/2000/svg", "ellipse"); c.setAttribute("rx", 9); c.setAttribute("ry", 13); c.setAttribute("fill", "#8fd0ff"); c.setAttribute("stroke", "#3a86c8"); c.setAttribute("stroke-width", 2); tearG.appendChild(c); tearEls.push(c); } })();
   var DEF = {
     cx: 0, dy: 0, rot: 0, sx: 1, sy: 1, lie: 0,
     alx: 106, aly: -126, ala: 4, als: 1, arx: 106, ary: -126, ara: 4, ars: 1,
@@ -1710,6 +1715,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 
     var T = {}; KEYS.forEach(function (k) { T[k] = DEF[k]; });
     T.cx = cxBase;
+    tearK = 0;
     var eye = "open", brow = "w", speed = 7, preO = 0, burstO = 0, burstS = 1, food = null, doBlink = false;
     var br = Math.sin(tt * 2.2);
     var me = (now - modeT0) / 1000, pk = null, sfx = "";
@@ -1927,6 +1933,15 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
         T.sy = 1 - .17 * jd; T.sx = 1 + .13 * jd; T.rot = 3 * jd; T.mouth = 1 + .3 * jd; T.L = REST + 70 * jd; T.sway = 4 * jd; sfx = rt < 1 ? "ぷるん" : "";
       }
       if (rt >= rd) { mode = "idle"; modeT0 = now; nextChange = now + rand(7000, 12000); blinkAt = now + 900; }
+    } else if (mode === "cry") {
+      speed = 12; var ct = me, ck = ct < 6.5 ? 1 : 0;
+      doBlink = false; eye = "squint"; T.ala = -55 + 22 * Math.sin(ct * 9); T.ara = -55 - 22 * Math.sin(ct * 9); T.als = 1.1; T.ars = 1.1; T.alx = 70; T.arx = 70; T.aly = -120; T.ary = -120;
+      T.mouth = 1.7 + .2 * Math.sin(ct * 8); T.rot = 2 * Math.sin(ct * 7); T.dy = 3 * Math.abs(Math.sin(ct * 7)); T.sy = 1 + .02 * Math.sin(ct * 14);
+      T.L = REST + 45 + 12 * Math.sin(ct * 3); T.sway = 4 * Math.sin(ct * 3);
+      sfx = (Math.floor(ct * 1.2) % 2) ? "うえーん" : "ぐすっ";
+      if (Math.floor(ct * 1.6) !== cryT) { cryT = Math.floor(ct * 1.6); sndSniff(); }
+      tearK = ct < .6 ? ct / .6 : ct > 6.2 ? Math.max(0, (7 - ct) / .8) : 1;
+      if (ct >= 7) { mode = "idle"; modeT0 = now; nextChange = now + rand(7000, 12000); blinkAt = now + 900; }
     } else if (mode === "angry") {
       speed = 26; var ea = (now - modeT0) / 1000, k = Math.max(0, 1 - ea / angryDur);
       brow = "a"; T.dy = 0; T.cx = cxBase + 3 * Math.sin(ea * 55) * k; T.mouth = 1.7; T.sy = 1 + .03 * Math.sin(ea * 28) * k; T.rot = 2 * Math.sin(ea * 40) * k;
@@ -2035,6 +2050,12 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     sfxEl.setAttribute("opacity", clamp(sfxCur, 0, 1));
     sfxEl.setAttribute("transform", "translate(" + wx(120) + " " + wy(-352 - 5 * Math.sin(tt * 5)) + ") rotate(6)");
 
+    tearG.setAttribute("opacity", tearK > .01 ? 1 : 0);
+    if (tearK > .01) for (var ti = 0; ti < 6; ti++) {
+      var side = ti < 3 ? -1 : 1, tp = (tt * 1.1 + (ti % 3) / 3) % 1;
+      tearEls[ti].setAttribute("cx", wx(side * 36 + side * 8 * tp)); tearEls[ti].setAttribute("cy", wy(-258 + 150 * tp * tp));
+      tearEls[ti].setAttribute("opacity", Math.sin(Math.PI * tp) * tearK);
+    }
     hatG.setAttribute("opacity", isBdayNow() ? clamp(1 - cur.inv * 2, 0, 1) : 0);
     stepConf(dt, now);
     // world overlays
@@ -2260,7 +2281,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   // 2026/10/8 限定：21時以降に開いたとき1回だけ
   function setliOk() { var d = new Date(); return !SV.setli && d.getFullYear() === 2026 && d.getMonth() === 9 && d.getDate() === 8 && d.getHours() >= 21; }
   L.lonely = ["グミ、つんつは寂しかったぞ", "グミ、やっと来たな。ずっと待ってたぞ", "グミ、おそいぞ。…でも来てくれてうれしいぞ", "グミ、ひとりで部屋にいるの、けっこう寂しいんだぞ", "グミ、会いたかったぞ。…べつに鼻水は関係ないぞ", "グミ、おまえがいない間、窓ばっかり見てたぞ", "グミ、おかえり。つんつは寂しくて鼻水が止まらなかったぞ", "グミ、来てくれたのか。…ずっと待ってたんだぞ", "グミ、ひさしぶりだな。つんつ、ちょっと寂しかったぞ", "グミ、ほっとかれたかと思ったぞ。…来てくれてよかった", "グミ、待ってる間ずっと、グミのこと考えてたぞ", "グミ、おまえの顔が見られて安心したぞ"];
-  var SETLI = "ぐみ、シュワシュワセトリ良かったぞ";
+  var SETLI = "グミ、シュワシュワセトリ良かったぞ。つんつは感動して鼻水たれたぞ";
   function buildGreeting(ctx) {
     var d = new Date(), g = growthOf(ctx.openDays), i;
     if (ctx.first) return [pick(L.first), L.first2];
@@ -2334,6 +2355,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       setTimeout(next, 4600);
     }
     setTimeout(next, 700);
+    if (openCtx.hours >= 24 && !openCtx.first) setTimeout(function () { if (isBase(mode)) startCry(performance.now()); }, 900);
   })();
 
   setInterval(function () {
