@@ -150,6 +150,17 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 .game .card.up, .game .card.ok { background: #fff; }
 .game .card.ok { opacity: .45; }
 .game .card svg { width: 80%; height: 80%; }
+.game .cups { position: relative; height: 104px; margin: 36px 0 4px; }
+.game .cup { position: absolute; top: 0; width: 28%; height: 100%; transition: left .32s ease; padding: 0; background: none; border: 0; border-radius: 0; min-width: 0; }
+.game .cup .ball { position: absolute; left: 50%; bottom: 6px; width: 46px; height: 46px; margin-left: -23px; }
+.game .cup .ball svg { width: 100%; height: 100%; }
+.game .cup .lid { position: absolute; left: 4%; right: 4%; bottom: 0; height: 74px; background: #f4c85a; border: 2.5px solid var(--line); border-radius: 8px 8px 22px 22px; transition: transform .25s ease; }
+.game .cup.up .lid { transform: translateY(-58px); }
+.game .bar { position: relative; height: 26px; margin: 10px 4px 4px; border: 2.5px solid var(--line); border-radius: 13px; background: #fff; overflow: hidden; }
+.game .bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #a9dcc8; }
+.game .bar b { position: absolute; top: -2px; bottom: -2px; width: 4px; background: #d9573a; }
+.game .holes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 6px 0; }
+.game .hole { padding: 0; min-width: 0; height: 52px; font-size: 1.8rem; background: #cdb98a; border-radius: 26px; display: flex; align-items: center; justify-content: center; }
 .viewer { position: fixed; inset: 0; z-index: 50; background: rgba(20,14,6,.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; }
 .viewer[hidden] { display: none; }
 .viewer img { max-width: 100%; max-height: 68vh; border: 3px solid var(--line); border-radius: 10px; background: #fff; }
@@ -2898,7 +2909,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   /* ---------- つんつ君と勝負（じゃんけん毎日／ほか3種は気まぐれで1日1回） ---------- */
   var gameOn = false, gameLast = -1e9, gameEl = document.createElement("div");
   gameEl.className = "game"; gameEl.hidden = true; document.body.appendChild(gameEl);
-  var GAME_NAME = { jk: "じゃんけん", mem: "神経衰弱", dir: "あっち向いてホイ", fast: "早押し" };
+  var GAME_NAME = { jk: "じゃんけん", mem: "神経衰弱", dir: "あっち向いてホイ", fast: "早押し", baba: "ババ抜き", cups: "コップあて", nose: "鼻水のばし", mole: "もぐらたたき" };
+  function shuf(a) { for (var i = a.length - 1; i > 0; i--) { var j = randInt(0, i), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   var HANDS = ["✊", "✌️", "✋"], DIRS = [["↑", "うえ"], ["↓", "した"], ["←", "ひだり"], ["→", "みぎ"]];
   var gTimers = [];
   function gT(fn, ms) { var id = setTimeout(fn, ms); gTimers.push(id); return id; }
@@ -3034,11 +3046,121 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     }
     draw();
   }
+
+  function babaPlay() {
+    var types = ["onigiri", "curry", "pudding", "fish"], me, him;
+    function pairOff(h) { var out = [], cnt = {}; h.forEach(function (c) { if (c === "joker") out.push(c); else cnt[c] = (cnt[c] || 0) + 1; }); Object.keys(cnt).forEach(function (k) { if (cnt[k] % 2) out.push(k); }); return out; }
+    do {
+      var deck = []; types.forEach(function (t) { deck.push(t, t); }); deck.push("joker"); shuf(deck);
+      me = pairOff(deck.slice(0, 5)); him = pairOff(deck.slice(5));
+    } while (!me.length || !him.length);
+    function face(c) { return c === "joker" ? "👻" : '<svg viewBox="0 0 64 64">' + ICONS[c] + '</svg>'; }
+    function draw(sub, canPick) {
+      gHtml(GAME_NAME.baba, sub, "", '<div class="gs">つんつの手札(' + him.length + 'まい)</div><div class="cards">' + him.map(function (_, i) { return '<button type="button" ' + (canPick ? 'data-g="' + i + '" ' : "") + 'class="card">？</button>'; }).join("") + '</div><div class="gs" style="margin-top:6px">グミの手札</div><div class="cards">' + me.map(function (c) { return '<button type="button" class="card up">' + face(c) + '</button>'; }).join("") + '</div>');
+      if (canPick) gOn(function (v) { meDraw(+v); });
+    }
+    function absorb(h, c) { var k = h.indexOf(c); if (c !== "joker" && k >= 0) { h.splice(k, 1); return true; } h.push(c); return false; }
+    function over() {
+      if (!me.length) { gT(function () { gFinish("baba", true, 20); }, 900); return true; }
+      if (!him.length) { gT(function () { gFinish("baba", false, 0); }, 900); return true; }
+      return false;
+    }
+    function meDraw(i) {
+      var c = him.splice(i, 1)[0], paired = absorb(me, c);
+      sndPop(); draw(paired ? "ペア！すてた" : (c === "joker" ? "ババだ…！" : "ペアなし"), false);
+      if (over()) return;
+      gT(function () { say("つんつの番だぞ", 1200); draw("つんつが ひく…", false); gT(himDraw, 1100); }, 1000);
+    }
+    function himDraw() {
+      var i = randInt(0, me.length - 1), c = me.splice(i, 1)[0], paired = absorb(him, c);
+      sndPop(); draw(paired ? "つんつ、ペアですてた" : (c === "joker" ? "つんつ、ババを ひいた！" : "つんつ、ペアなし"), false);
+      if (over()) return;
+      gT(function () { shuf(him); draw("グミの番：つんつの手札から 1まい ひけ", true); }, 1100);
+    }
+    shuf(him); draw("グミの番：つんつの手札から 1まい ひけ（👻がババ）", true);
+  }
+  function cupsPlay() {
+    var round = 0, wins = 0, losses = 0;
+    function roundStart() {
+      round++;
+      var slots = [0, 1, 2], ball = randInt(0, 2), shuffles = 0, lock = true;
+      gHtml(GAME_NAME.cups, round + "回目：おにぎりを よく 見ておけ", "", '<div class="cups">' + [0, 1, 2].map(function (i) { return '<button type="button" class="cup' + (i === ball ? " up" : "") + '" data-g="' + i + '" style="left:' + (slots[i] * 34 + 4) + '%"><span class="ball">' + (i === ball ? '<svg viewBox="0 0 64 64">' + ICONS.onigiri + '</svg>' : "") + '</span><span class="lid"></span></button>'; }).join("") + '</div><div class="gs">グミ ' + wins + ' － ' + losses + ' つんつ（2かい あてたら勝ち）</div>');
+      var cups = gameEl.querySelectorAll(".cup");
+      gT(function () {
+        cups[ball].classList.remove("up");
+        gT(function () {
+          function swap() {
+            if (shuffles >= 3) { lock = false; gameEl.querySelector(".gs").textContent = "おにぎりは どれだ？ タップ！"; return; }
+            shuffles++;
+            var a = randInt(0, 2), b = (a + randInt(1, 2)) % 3, t = slots[a]; slots[a] = slots[b]; slots[b] = t;
+            for (var k = 0; k < 3; k++) cups[k].style.left = (slots[k] * 34 + 4) + "%";
+            sndPop(); gT(swap, 520);
+          }
+          swap();
+        }, 500);
+      }, 1600);
+      Array.prototype.forEach.call(cups, function (c, i) {
+        c.addEventListener("click", function () {
+          if (lock) return; lock = true;
+          cups[ball].classList.add("up"); c.classList.add("up");
+          var ok = i === ball; if (ok) wins++; else losses++;
+          if (ok) sndCoin(); else sndPop();
+          gameEl.querySelector(".gs").textContent = ok ? "あたり！" : "はずれ…";
+          gT(function () {
+            if (wins >= 2) gFinish("cups", true, 20); else if (losses >= 2) gFinish("cups", false, 0); else roundStart();
+          }, 1300);
+        });
+      });
+    }
+    roundStart();
+  }
+  function nosePlay() {
+    var tgt = rand(42, 85), him = Math.max(5, Math.min(98, tgt + rand(-13, 13))), v = 0, t0 = 0, held = false, done = false, raf = 0;
+    function cm(p) { return (p / 2).toFixed(1) + "cm"; }
+    gHtml(GAME_NAME.nose, "ボタンを おしてる間、鼻水がのびる。赤い線に いちばん近く はなせ", "", '<div class="bar"><i id="nbar"></i><b style="left:' + tgt + '%"></b></div><div class="gs">つんつの めやす：' + cm(tgt) + '</div><div class="gr">' + gBtn("hold", "おして のばす", "big") + '</div>');
+    say("つんつは " + cm(tgt) + " くらいのばせるぞ", 3600);
+    var bar = gameEl.querySelector("#nbar"), btn = gameEl.querySelector("button[data-g=hold]");
+    function loop() { if (!held || done) return; v = Math.min(100, (performance.now() - t0) * .05); bar.style.width = v + "%"; if (v >= 100) { release(); return; } raf = requestAnimationFrame(loop); }
+    function release() {
+      if (!held || done) return; held = false; done = true; cancelAnimationFrame(raf);
+      if (v >= 100) { say("ちぎれたぞ！", 1800); gHtml(GAME_NAME.nose, "のばしすぎて ちぎれた！", "💦", ""); gT(function () { gFinish("nose", false, 0); }, 1100); return; }
+      var em = Math.abs(v - tgt), hm = Math.abs(him - tgt);
+      sndPop();
+      gHtml(GAME_NAME.nose, em < hm ? "グミのほうが めやすに近い！" : "つんつのほうが めやすに近い", "グミ " + cm(v) + "<small>vs</small>つんつ " + cm(him), "");
+      gT(function () { gFinish("nose", em < hm, 20); }, 1500);
+    }
+    btn.addEventListener("pointerdown", function (e) { e.preventDefault(); if (done) return; held = true; t0 = performance.now(); loop(); });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(function (n) { btn.addEventListener(n, release); });
+  }
+  function molePlay() {
+    var me = 0, him = 0, n = 0, h = -1, active = false;
+    function draw(msg, mole, mark) {
+      var cells = "";
+      for (var i = 0; i < 9; i++) cells += '<button type="button" data-g="' + i + '" class="hole">' + (i === mole ? mark : "") + '</button>';
+      gHtml(GAME_NAME.mole, msg || "もぐらを タップ！つんつ君も たたくぞ", "", '<div class="holes">' + cells + '</div><div class="gs">グミ ' + me + ' － ' + him + ' つんつ' + (n >= 10 && me === him ? "（同点：さいごの1匹）" : "") + '</div>');
+      gOn(function (v) { if (active && +v === h) { active = false; me++; sndCoin(); draw("やった！", h, "💥"); nextRound(); } });
+    }
+    function nextRound() {
+      gT(function () {
+        if (n >= 10 && me !== him) { gFinish("mole", me > him, 20); return; }
+        n++; var prev = h; do { h = randInt(0, 8); } while (h === prev);
+        active = true; draw("", h, "🐹");
+        var tt = Math.random() < .72 ? rand(420, 950) : -1;
+        if (tt > 0) gT(function () { if (active) { active = false; him++; draw("つんつ君がたたいた！", h, "😏"); nextRound(); } }, tt);
+        gT(function () { if (active) { active = false; draw("にげた…", -1, ""); nextRound(); } }, 1150);
+      }, 450);
+    }
+    draw("じゅんび…", -1, ""); nextRound();
+  }
   function startGame(kind) {
     gameOn = true; gameEl.hidden = false;
     if (kind === "jk") jankenPlay("jk", "", function (win) { gFinish("jk", win, 10); });
     else if (kind === "dir") dirPlay("まず じゃんけん");
     else if (kind === "fast") fastPlay();
+    else if (kind === "baba") babaPlay();
+    else if (kind === "cups") cupsPlay();
+    else if (kind === "nose") nosePlay();
+    else if (kind === "mole") molePlay();
     else memPlay();
   }
   function invite(kind) {
@@ -3059,7 +3181,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     var wait = function (k) { return SV[k + "LaterDay"] === t && Date.now() < (SV[k + "Later"] || 0); };
     if (SV.jkDay !== t && !wait("jk")) { invite("jk"); return; }
     if (SV.gmDay !== t && !wait("gm")) {
-      if (SV.gmKindDay !== t) { SV.gmKind = ["mem", "dir", "fast"][randInt(0, 2)]; SV.gmKindDay = t; save(); }
+      if (SV.gmKindDay !== t) { SV.gmKind = ["mem", "dir", "fast", "baba", "cups", "nose", "mole"][randInt(0, 6)]; SV.gmKindDay = t; save(); }
       invite(SV.gmKind);
     }
   }, 7000);
