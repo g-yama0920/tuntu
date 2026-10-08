@@ -2532,7 +2532,6 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     var cand = [[4, L[bandOfT(t)]], [2, L.gen], [1, L.week[d.getDay()]], [1, L.month[d.getMonth()]], [1, L.growth[g]]];
     if (rainyOf(todayIdx())) cand.push([2, L.rain]);
     if (isBirthday(d)) cand.push([3, L.birthday]);
-    if (Math.random() < .2) return mineLine();
     var tot = 0; cand.forEach(function (c) { tot += c[0]; });
     var r = Math.random() * tot;
     for (var i = 0; i < cand.length; i++) { r -= cand[i][0]; if (r <= 0) return pick(cand[i][1]); }
@@ -2589,12 +2588,12 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     nextTalk = now + 30000;
     if (!isBase(mode) || !sayEl.hidden || (STATES[mode].angry && mode !== "sleep" && mode !== "read")) { nextTalk = now + 4000; return; }
     var m = mode === "sleep" ? "むにゃ… " : mode === "read" ? "ぶつぶつ… " : "";
-    say(m + (Math.random() < .3 ? mineLine() : Math.random() < .5 ? hintLine() : bandLine(growthOf(SV.openDays))), 3600);
+    say(m + (Math.random() < .2 ? mineLine() : Math.random() < .5 ? hintLine() : bandLine(growthOf(SV.openDays))), 3600);
   }
   $("talk").addEventListener("click", function () {
     if (!isBase(mode)) return;
     var m = mode === "sleep" ? "むにゃ… " : mode === "read" ? "ぶつぶつ… " : "";
-    say(m + (Math.random() < .3 ? mineLine() : Math.random() < .5 ? hintLine() : chatLine()), 3800); nextTalk = performance.now() + 30000;
+    say(m + (Math.random() < .2 ? mineLine() : Math.random() < .5 ? hintLine() : chatLine()), 3800); nextTalk = performance.now() + 30000;
   });
 
   (function intro() {
