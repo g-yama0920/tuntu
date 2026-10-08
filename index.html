@@ -367,6 +367,12 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
         <g id="tearG" pointer-events="none" opacity="0"></g>
         <g id="confG" pointer-events="none"></g>
         <g id="evFx" pointer-events="none"></g>
+        <g id="kusuG" pointer-events="none" opacity="0">
+          <line x1="980" y1="30" x2="980" y2="112" class="ink" stroke-width="4"/>
+          <g id="kusuL"><path d="M980 112 A62 62 0 0 0 980 236 Z" fill="#f08aa8" class="ink" stroke-width="5"/></g>
+          <g id="kusuR"><path d="M980 112 A62 62 0 0 1 980 236 Z" fill="#f2c94c" class="ink" stroke-width="5"/></g>
+          <g id="kusuB" opacity="0"><rect x="880" y="246" width="200" height="64" rx="6" fill="#fff" class="ink" stroke-width="5"/><text x="980" y="291" font-size="34" text-anchor="middle" style="font-family:var(--font-display);fill:var(--burst)">おめでとう</text></g>
+        </g>
         <text id="burst" class="burst-text" x="640" y="500" font-size="78" opacity="0" style="fill:var(--burst)">ハクション！</text>
         <text id="sfx" class="burst-text" x="0" y="0" font-size="54" opacity="0" style="fill:var(--burst);stroke-width:11px"></text>
         <text id="pre" class="burst-text" x="800" y="560" font-size="46" opacity="0" style="fill:var(--burst);stroke-width:8px">は…は…</text>
@@ -475,7 +481,17 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     hiccup:    ST(1,   [1, 1, 1, 1, 1], { short: 2.4, say: ["ヒック！ しゃっくりが出たぞ", "ヒック…びっくりしたぞ"] }),
     shiver:    ST(1.2, [1.3, 1.3, .8, 1, 1.3], { short: 4.6, say: ["少し寒いぞ", "ぶるっ。少し寒いぞ", "ちょっと冷えてきたぞ。グミ、あったかくしろよ"] }),
     hot:       ST(1.2, [.8, .8, 1.5, 1, .8], { short: 5, say: ["暑いぞ…", "あついぞ。グミ、水分とれよ"] }),
-    growl:     ST(1,   [.6, 1, 1.2, 1.4, .8], { short: 4, say: ["お腹がすいたぞ", "腹の虫が鳴いたぞ"] })
+    growl:     ST(1,   [.6, 1, 1.2, 1.4, .8], { short: 4, say: ["お腹がすいたぞ", "腹の虫が鳴いたぞ"] }),
+    niramekko: ST(1,   [.6, 1, 1.2, 1, .8], { say: ["にらめっこするか、グミ。…あっぷっぷ", "グミ、にらめっこだぞ。笑うなよ"] }),
+    puku:      ST(1,   [1, 1, 1, 1, 1], { short: 4, say: ["ぷくー。おこってないぞ", "ほっぺがふくらんだぞ、グミ"] }),
+    shippo:    ST(1.2, [.4, 1, 1.2, 1.2, .8], { say: ["おしりふりふりだぞ", "うれしくて、おしりがゆれるぞ"] }),
+    jyunan:    ST(1.2, [.3, 2, 1, .8, .6], { say: ["柔軟体操だぞ、グミ", "からだをやわらかくするぞ"] }),
+    dash:      ST(1,   [.1, 1, 1.4, 1, .3], { say: ["ダッシュだぞ！", "グミ、はやいだろ！"] }),
+    henkao:    ST(1,   [.5, 1, 1.2, 1.2, 1], { say: ["変顔だぞ、グミ。べー", "笑うなよ、グミ"] }),
+    airdraw:   ST(1,   [.2, .8, 1.3, 1, .5], { say: ["空にハートをかくぞ", "グミ、星をかいたぞ"] }),
+    gsing:     ST(1,   [.2, .6, 1.2, 1.2, .8], { say: ["グミ、聴いてるか？", "グミ、サビいくぞ"] }),
+    gstream:   ST(1,   [.2, .8, 1.2, 1.2, 1], { say: ["みんなー、こんつんつー", "グミ、配信はじめるぞ。こんつんつー"] }),
+    gwait:     ST(1,   [.4, .8, 1, 1.4, 1.2], { homes: [-290], say: ["グミ、まだかー", "グミ、まだ来ないのか？"] })
   };
   var STATE_KEYS = Object.keys(STATES);
 
@@ -501,7 +517,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   ];
 
   /* ---------- save ---------- */
-  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0, setli: 0, tokyo: -1, evDone: {} };
+  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0, setli: 0, tokyo: -1, evDone: {}, kusu: 0 };
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) {
@@ -1418,9 +1434,15 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     mode = "refuse"; modeT0 = now;
     say(pick(L.full), 2600, false); sndPop();
   }
-  var REACTS = ["sneeze", "giggle", "hop", "spin", "shy", "stretch", "dizzy", "pout", "shrink", "jelly"];
-  var RDUR = { giggle: 1.7, hop: 1.2, spin: 1.1, shy: 2.1, stretch: 1.7, dizzy: 2.3, pout: 1.9, shrink: 1.3, jelly: 1.8 };
+  var REACTS = ["sneeze", "giggle", "hop", "spin", "shy", "stretch", "dizzy", "pout", "shrink", "jelly", "dodge", "hifive", "bowback", "sneeze3", "kiss", "revenge"];
+  var RDUR = { dodge: 1.3, hifive: 1.7, bowback: 1.9, sneeze3: 3.4, kiss: 2.2, revenge: 2.3, giggle: 1.7, hop: 1.2, spin: 1.1, shy: 2.1, stretch: 1.7, dizzy: 2.3, pout: 1.9, shrink: 1.3, jelly: 1.8 };
   var RSAY = {
+    dodge: ["うわっ！にげるぞ", "つんつんしすぎだぞ、グミ"],
+    hifive: ["ハイタッチだぞ、グミ！", "いえーい、グミ！"],
+    bowback: ["ぺこり。グミ、よろしくな", "グミ、ごていねいにどうも"],
+    sneeze3: ["ハ、ハ…ハクション！", "またくしゃみだぞ…"],
+    kiss: ["ちゅー…グミ、いいのか？", "グミ、ちゅーだぞ"],
+    revenge: ["仕返しだぞ、グミ。つんつん！", "鼻水でつんつんしてやるぞ"],
     giggle: ["くすぐったいぞ、グミ", "あはは、やめろよグミ", "ひひっ、くすぐったいぞ"],
     hop: ["うわっ！びっくりしたぞ", "おっと、グミか", "ふいうちはずるいぞ"],
     spin: ["くるっ！", "目が回るぞ、グミ", "回っちゃったぞ"],
@@ -1431,12 +1453,12 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     shrink: ["ひゃっ！つめたいぞ", "ひゃあ、びっくりだぞ", "グミ、ゆびが冷たいぞ"],
     jelly: ["ぷるんぷるんだぞ", "おれはゼリーじゃないぞ", "からだがゆれるぞ、グミ"]
   };
-  var rk = "giggle", rlast = "", rsaid = false;
+  var rk = "giggle", rlast = "", rsaid = false, rdir = 1, rshy = false, rcyc = -1;
   function startReact(now) {
     var cand = REACTS.filter(function (k) { return k !== rlast; });
     var k = cand[randInt(0, cand.length - 1)]; rlast = k;
     if (k === "sneeze") { startSneeze(now); return; }
-    mode = "react"; modeT0 = now; rk = k; rsaid = false;
+    mode = "react"; modeT0 = now; rk = k; rsaid = false; rdir = cxBase > 0 ? -1 : 1; rshy = Math.random() < .5; rcyc = -1;
     say(pick(RSAY[k]), 2200);
     if (k === "stretch" || k === "jelly") sndBoing(); else sndPop();
     vibrate(20);
@@ -1733,6 +1755,13 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   ].forEach(function (r) { mk({ id: "f_" + r[0], req: r[0], kind: "furn", pose: r[1], a: r[2], dur: 9, held: r[3], worn: r[4], fx: r[5], say: r[6], target: "furn" }); });
 
   mk({ id: "m_muscle", kind: "free", pose: "muscle", a: {}, dur: 5, held: null, worn: null, fx: null, say: null, target: null });
+  function selfBdayOn(d) { return d.getMonth() === 9 && d.getDate() === 8 && d.getFullYear() >= 2027; }
+  HELD.cake = '<rect x="-30" y="-6" width="60" height="30" rx="6" fill="#f8e3c6" class="ink" stroke-width="3.5"/><path d="M-30 -2 Q-15 -14 0 -2 Q15 -14 30 -2" fill="#f08aa8" class="ink" stroke-width="3"/><rect x="-3" y="-28" width="6" height="22" fill="#7fb6e8" class="ink" stroke-width="2.5"/><ellipse cx="0" cy="-34" rx="5" ry="8" fill="#ffb347"/>';
+  mk({ id: "t_selfbday", kind: "time", win: [0, 0, 24, 0], ok: selfBdayOn, pose: "proud", a: { sfx: "ふふん" }, dur: 10, held: H(HELD.cake, "R", -4, -12, 0), worn: null, fx: "sparkle", say: ["今日はつんつの誕生日だぞ！グミ、祝ってくれ", "ケーキだ。ろうそく、ふーするぞ"], target: null });
+  var KUSU_AT = [7, 30, 100];
+  function kusuNext() { var m = 0; KUSU_AT.forEach(function (k) { if (SV.openDays >= k && SV.kusu < k) m = k; }); return m; }
+  mk({ id: "m_kusu", kind: "time", win: [0, 0, 24, 0], ok: function () { return kusuNext() > 0; }, pose: "kusu", a: {}, dur: 9, held: null, worn: null, fx: null, say: [function () { return "グミ、つんつを開いて" + SV.kusu + "日目だぞ！くす玉を割るぞ"; }, "おめでとう！ありがとな、グミ"], target: null, onStart: function () { SV.kusu = kusuNext() || SV.kusu; save(); kusuDone = false; } });
+  var kusuT = -1, kusuDone = false, kusuG = $("kusuG"), kusuL = $("kusuL"), kusuR = $("kusuR"), kusuB = $("kusuB");
   function seasonOk(e, d) {
     var x = (d.getMonth() + 1) * 100 + d.getDate(), a = e.from[0] * 100 + e.from[1], b = e.to[0] * 100 + e.to[1];
     if (!(a <= b ? (x >= a && x <= b) : (x >= a || x <= b))) return false;
@@ -1745,7 +1774,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     EVL.forEach(function (e) {
       if (SV.evDone[e.id] === t) return;
       if (e.kind === "free") return;
-      if (e.kind === "time") { if (winOk(e, d)) tm.push(e); }
+      if (e.kind === "time") { if (winOk(e, d) && (!e.ok || e.ok(d))) tm.push(e); }
       else if (e.kind === "season") { if (seasonOk(e, d)) ot.push(e); }
       else if (SV.owned[e.req]) ot.push(e);
     });
@@ -1758,7 +1787,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   }
   function startEvent(e, now) {
     var d = new Date(); if (e.kind !== "free") { SV.evDone[e.id] = todayIdx(); save(); }
-    EVC = e; mode = "ev"; modeT0 = now; evSaid = 0; evPhase = 0;
+    EVC = e; mode = "ev"; modeT0 = now; evSaid = 0; evPhase = 0; if (e.onStart) e.onStart();
     evX = e.target === "window" ? -300 : e.target === "furn" ? furnX(e.req) : e.target === "window0" ? cxBase : cxBase;
     if (e.target === "window0") evX = -240;
     evHeldEl.innerHTML = e.held ? e.held.svg : ""; evWornEl.innerHTML = e.worn || "";
@@ -1828,6 +1857,11 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     read: function (ct, T, R) { SITP(T); T.book = 1; T.pdy = 4; T.pdx = 3 * Math.sin(ct * 1.3); T.mouth = .45; T.L = REST - 4; T.alx = 112; T.aly = -88; T.ala = 6; T.arx = 62; T.ary = -92; T.ara = 84; T.rot = 1.5; },
     muscle: function (ct, T, R) { var pu = .5 + .5 * Math.sin(ct * 7); R.eye = "squint"; T.alx = 104; T.aly = -122; T.ala = -95; T.als = 1.3; T.arx = 104; T.ary = -122; T.ara = -95; T.ars = 1.3; T.sx = 1.05 + .03 * pu; T.sy = 1.04; T.mouth = 1.6; T.dy = -3 * pu; T.rot = 1.5 * Math.sin(ct * 14); T.L = REST + 4; R.sfx = "ムキーッ"; },
     wait: function (ct, T, R) { T.alx = 44; T.aly = -100; T.ala = 40; T.arx = 44; T.ary = -100; T.ara = 40; T.lly = -7 * Math.max(0, Math.sin(ct * 6)); T.pdx = -8; T.mouth = .7; T.rot = 2 * Math.sin(ct * 1.5); T.L = REST - 8; R.sfx = ct % 4 > 2 ? "まだかー" : "そわそわ"; },
+    kusu: function (ct, T, R) {
+      kusuT = ct; R.eye = ct > 1.4 ? "happy" : "open"; T.alx = 60; T.aly = -120; T.arx = 60; T.ary = -120;
+      var c = Math.abs(Math.sin(ct * 7)); if (ct > 1.4) { T.ala = 30 - 50 * c; T.ara = 30 - 50 * c; T.dy = -5 * c; T.mouth = 1.3; R.sfx = c > .8 ? "パチパチ" : ""; } else { T.ala = -150; T.ara = -150; T.mouth = 1; T.pdy = -4; R.sfx = "ぐいっ"; }
+      if (ct > 1.4 && !kusuDone) { kusuDone = true; spawnConf(90); sndCoin(); vibrate(40); }
+    },
     block: function (ct, T, R) { var sq = .5 - .5 * Math.cos(ct * 2.2); T.dy = 38 * sq; T.sy = 1 - .08 * sq; T.llr = 50 * sq; T.lrr = -50 * sq; T.ala = -60 * sq; T.ara = -60 * sq; T.mouth = 1 + .4 * sq; T.L = REST - 10 * sq; R.sfx = sq > .9 ? "ひとーつ" : ""; }
   };
 
@@ -1843,6 +1877,12 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
         cx = 150 + (i * 67) % 1000 + 40 * Math.sin(p * 9 + i); cy = 40 + p * 1050; rx = kind === "leaves" ? 11 : 9; ry = kind === "leaves" ? 6 : 5;
         fill = kind === "leaves" ? ["#e07a2f", "#c8402a", "#d9a02a"][i % 3] : (i % 2 ? "#f6b8cc" : "#fbd5e0"); rot = p * 400 + i * 30; op = k * .9;
       } else if (kind === "snow") { cx = 150 + (i * 71) % 1000 + 25 * Math.sin(p * 7 + i); cy = 40 + p * 1050; rx = ry = 5; op = k * .9; }
+      else if (kind === "trail") {
+        var ph2 = (tt * .22) % 1, shape = Math.floor(tt * .22) % 2, ccx = wx(130), ccy = wy(-300), u = i / 16, px, py;
+        if (shape === 0) { var th = u * 6.283; px = 16 * Math.pow(Math.sin(th), 3); py = -(13 * Math.cos(th) - 5 * Math.cos(2 * th) - 2 * Math.cos(3 * th) - Math.cos(4 * th)); px *= 4.2; py *= 4.2; fill = "#ff7aa8"; }
+        else { var v = u * 10, vk = Math.floor(v), vf = v - vk, a1 = (-90 + 36 * vk) * Math.PI / 180, a2 = (-90 + 36 * (vk + 1)) * Math.PI / 180, r1 = vk % 2 ? 26 : 62, r2 = (vk + 1) % 2 ? 26 : 62; px = (1 - vf) * r1 * Math.cos(a1) + vf * r2 * Math.cos(a2); py = (1 - vf) * r1 * Math.sin(a1) + vf * r2 * Math.sin(a2); fill = "#ffd93b"; }
+        cx = ccx + px; cy = ccy + py; rx = ry = 6; op = (u < ph2 * 1.25) ? (1 - Math.max(0, ph2 - .85) / .15) : 0;
+      }
       else if (kind === "stars") { if (i > 8) { op = 0; } else { cx = 190 + (i * 53) % 150; cy = 170 + (i * 71) % 220; rx = ry = 4 + 2 * Math.sin(tt * 3 + i); fill = "#fff6b0"; op = k * (.5 + .5 * Math.sin(tt * 3 + i)); } }
       else if (kind === "sparkle") { cx = 400 + (i * 97) % 480; cy = 90 + (i * 59) % 200; rx = ry = 5 + 3 * Math.sin(tt * 4 + i); fill = "#ffe27a"; op = k * (.5 + .5 * Math.sin(tt * 4 + i * 2)); }
       else if (kind === "steam") { cx = wx(-30 + (i % 5) * 15); cy = wy(-340) - p * 150; rx = ry = 8 + p * 14; op = k * (1 - p) * .7; }
@@ -1934,6 +1974,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   };
 
   var hatG = $("hatG"), confG = $("confG"), confs = [], confAt = 0;
+  function isSelfBdayNow() { return !!(env && env.date && env.m === 10 && env.d === 8 && env.date.getFullYear() >= 2027); }
   function isBdayNow() { return !!(env && env.m === 2 && env.d === 14); }
   function spawnConf(n) {
     for (var i = 0; i < n && confs.length < 90; i++) {
@@ -1945,7 +1986,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     }
   }
   function stepConf(dt, now) {
-    if (isBdayNow() && now > confAt) { confAt = now + 160; spawnConf(AMP < 1 ? 1 : 2); }
+    if ((isBdayNow() || isSelfBdayNow()) && now > confAt) { confAt = now + 160; spawnConf(AMP < 1 ? 1 : 2); }
     for (var i = confs.length - 1; i >= 0; i--) {
       var c = confs[i]; c.y += c.vy * dt; c.x += (c.vx + 30 * Math.sin(now / 400 + c.ph)) * dt; c.r += c.vr * dt;
       if (c.y > 1020) { confG.removeChild(c.el); confs.splice(i, 1); continue; }
@@ -2149,6 +2190,39 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     } else if (mode === "growl") {
       doBlink = true; T.alx = 44; T.aly = -100; T.ala = 40; T.arx = 44; T.ary = -100; T.ara = 40;
       T.mouth = .6; T.sy = 1 + .02 * Math.sin(me * 8); T.pdy = 4; T.L = REST - 8; sfx = "ぐぅ～";
+    } else if (mode === "niramekko") {
+      doBlink = false; var nc = me % 5;
+      if (nc < 3) { brow = "a"; T.pdy = 3; T.mouth = .45; T.L = REST - 8; T.rot = 1.5 * Math.sin(me * 2); }
+      else { eye = "squint"; T.mouth = 1.8; T.sx = 1.05; T.sy = 1.03; T.rot = 3 * Math.sin(me * 18); T.L = REST + 10; sfx = "あっぷっぷ"; }
+    } else if (mode === "puku") {
+      doBlink = false; brow = "a"; var pk2 = Math.sin(Math.PI * clamp(me / .7, 0, 1));
+      T.mouth = .4; T.sx = 1 + .07 * pk2; T.sy = 1 - .02 * pk2; T.alx = 44; T.aly = -100; T.ala = 40; T.arx = 44; T.ary = -100; T.ara = 40; T.pdx = -6; T.L = REST - 10; sfx = "ぷくー";
+    } else if (mode === "shippo") {
+      doBlink = true; eye = "happy"; T.sway = 12 * Math.sin(me * 9); T.rot = 6 * Math.sin(me * 9 + 1); T.mouth = 1.2; T.L = REST + 4 * Math.sin(me * 9); T.dy = -3 * Math.abs(Math.sin(me * 9)); sfx = (me % 4 < 2) ? "ふりふり" : "";
+    } else if (mode === "jyunan") {
+      doBlink = false; var jb = .5 - .5 * Math.cos(2 * Math.PI * (me % 6) / 6);
+      eye = jb > .5 ? "squint" : "open"; T.rot = 20 * jb; T.dy = 16 * jb; T.sy = 1 - .06 * jb; T.ala = 15 + 30 * jb; T.ara = 15 + 30 * jb; T.mouth = .8 + .4 * jb; T.L = REST - 8 * jb; sfx = jb > .8 ? "ぐーっ" : "";
+    } else if (mode === "dash") {
+      doBlink = true; speed = 14; var dw = me * 16, dc = Math.cos(me * 1.5);
+      T.cx = cxBase + 220 * Math.sin(me * 1.5); T.llr = 32 * Math.sin(dw); T.lrr = -32 * Math.sin(dw); T.lly = -10 * Math.max(0, Math.sin(dw)); T.lry = -10 * Math.max(0, -Math.sin(dw));
+      T.dy = -8 * Math.abs(Math.sin(dw)); T.rot = 7 * (dc > 0 ? 1 : -1); T.ala = 40 * Math.sin(dw); T.ara = -40 * Math.sin(dw); T.mouth = 1.4; T.L = REST + 20 * Math.sin(dw); sfx = "ダダダ";
+    } else if (mode === "henkao") {
+      doBlink = false; var hf = Math.floor(me / 1.4) % 3; T.rot = 3 * Math.sin(me * 8);
+      if (hf === 0) { eye = "squint"; T.mouth = 1.9; sfx = "べー"; } else if (hf === 1) { T.pdx = 8; T.pdy = -7; T.mouth = .45; T.sy = 1.03; sfx = "ひょっとこ"; } else { eye = "happy"; T.sx = 1.08; T.sy = .96; T.mouth = 1.5; sfx = "ぶー"; }
+    } else if (mode === "airdraw") {
+      doBlink = true; T.arx = 70; T.ary = -150; T.ara = -130 + 25 * Math.sin(me * 3); T.alx = 96; T.ala = 20; T.pdx = 6; T.pdy = -3; T.mouth = .7; T.L = REST - 6;
+      sfx = (Math.floor(me / 4) % 2) ? "☆" : "♡";
+    } else if (mode === "gsing") {
+      doBlink = false; pk = "sing"; eye = "squint"; T.arx = 44; T.ary = -118; T.ara = -150; T.ars = 1.4; T.alx = 108; T.ala = 6;
+      T.mouth = 1.1 + .7 * Math.abs(Math.sin(tt * 5.5)); T.sway = 8 * Math.sin(tt * 1.5); T.rot = 3 * Math.sin(tt * 1.5); T.L = REST + 6 * Math.sin(tt * 3);
+      sfx = ["♪～", "♫", "♪♪"][Math.floor(me * .8) % 3];
+    } else if (mode === "gstream") {
+      doBlink = true; eye = "happy"; T.arx = 62; T.ary = -134; T.ara = -120 + 30 * Math.sin(me * 8); T.ars = 1.2; T.mouth = 1.3; T.sway = 3 * Math.sin(me * 3); T.L = REST + 8;
+      sfx = (Math.floor(me / 3) % 2) ? "こんつんつー" : "みんなー！";
+    } else if (mode === "gwait") {
+      var gc = me % 10; doBlink = true;
+      if (gc < 6) { T.pdx = -10; T.rot = -2.5; T.mouth = .8; T.L = REST + 10; sfx = (gc > 2 && gc < 5) ? "まだかー" : ""; }
+      else { eye = "happy"; T.mouth = 1.3; T.L = REST + 4; T.dy = -3 * Math.abs(Math.sin(me * 6)); sfx = "にこっ"; }
     } else if (mode === "ev") {
       var EE = EVC, RR = { eye: "open", sfx: "" };
       if (!EE) { endEvent(now); }
@@ -2188,6 +2262,26 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       } else if (rk === "pout") {
         doBlink = false; brow = "a"; T.alx = 44; T.aly = -100; T.ala = 40; T.arx = 44; T.ary = -100; T.ara = 40;
         T.pdx = -7; T.rot = -3; T.mouth = .55; T.L = REST - 10; T.sy = 1 + .015 * Math.sin(rt * 6); sfx = "ぷんっ";
+      } else if (rk === "dodge") {
+        doBlink = false; var dq = clamp(rt / 1.2, 0, 1); T.cx = cxBase + rdir * 90 * Math.sin(Math.PI * dq); T.dy = -40 * Math.sin(Math.PI * clamp(rt / .5, 0, 1));
+        T.mouth = 1.4; T.ala = -60; T.ara = -60; T.sy = 1 + .04 * Math.sin(Math.PI * clamp(rt / .5, 0, 1)); sfx = rt < .7 ? "ぴょん！" : "";
+      } else if (rk === "hifive") {
+        doBlink = false; eye = "happy"; T.arx = 62; T.ary = -134; T.ara = -150 + 8 * Math.sin(rt * 10); T.ars = 1.2; T.mouth = 1.3; T.L = REST + 8;
+        sfx = (rt > .5 && rt < 1.2) ? "パチン！" : "ハイタッチ"; if (rt > .5 && !rsaid) { rsaid = true; sndPop(); vibrate(25); }
+      } else if (rk === "bowback") {
+        doBlink = false; var bq = Math.sin(Math.PI * clamp(rt / 1.7, 0, 1)); eye = bq > .4 ? "squint" : "open"; T.rot = 14 * bq; T.dy = 10 * bq; T.sy = 1 - .05 * bq; T.mouth = .9; sfx = bq > .7 ? "ぺこり" : "";
+      } else if (rk === "sneeze3") {
+        doBlink = false; var sc = Math.floor(rt / 1.1), sf = rt - sc * 1.1;
+        if (sf < .5) { var sw = sf / .5; T.L = REST - 60 * sw; T.sy = 1 + .06 * sw; eye = sw > .5 ? "squint" : "open"; T.mouth = 1 + .4 * sw; T.ala = -20 * sw; T.ara = -20 * sw; preO = Math.sin(Math.PI * sw) * 1.2; }
+        else if (sf < .75) { if (rcyc !== sc) { rcyc = sc; spawnDrops(); sndSneeze(); vibrate(30); } eye = "squint"; T.L = 190; T.sy = .94; T.sx = 1.08; T.mouth = 1.6; burstO = 1; burstS = .8 + .3 * ((sf - .5) / .25); }
+        else { eye = "squint"; T.L = REST + 40 * Math.exp(-(sf - .75) * 5); T.mouth = 1.1; burstO = clamp(1.3 - (sf - .75) * 3.5, 0, 1); burstS = 1.1; }
+      } else if (rk === "kiss") {
+        doBlink = false;
+        if (rshy && rt > 1.1) { eye = "squint"; T.alx = 50; T.aly = -150; T.ala = -165; T.als = 1.5; T.arx = 50; T.ary = -150; T.ara = -165; T.ars = 1.5; T.mouth = .6; T.rot = 4 * Math.sin(rt * 6); sfx = "てれっ"; }
+        else { eye = "squint"; T.mouth = .45; T.rot = 4; T.dy = -2 * Math.abs(Math.sin(rt * 5)); T.L = REST - 8; T.pdx = 4; sfx = "ちゅー"; }
+      } else if (rk === "revenge") {
+        doBlink = false; brow = "a"; var rc = rt % 1.15, rq = rc < .6 ? Math.sin(Math.PI * rc / .6) : 0;
+        T.L = REST + 170 * rq; T.sway = 12 * Math.sin(rt * 10) * rq; T.rot = -3; T.mouth = 1.2; T.pdx = 5; sfx = rq > .6 ? "つんつん！" : "";
       } else if (rk === "shrink") {
         doBlink = false; var sp = rt < .18 ? rt / .18 : Math.max(0, 1 - (rt - .18) / .9);
         eye = sp > .4 ? "squint" : "open"; T.sy = 1 - .18 * sp; T.sx = 1 + .1 * sp; T.L = REST - 70 * sp; T.mouth = 1 + .5 * sp;
@@ -2307,7 +2401,14 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     var evOn = mode === "ev" && evPhase === 1 && EVC;
     if (evOn && EVC.held) { var hh = EVC.held.hand === "L" ? handL() : handR(); evHeldEl.setAttribute("transform", tr(hh, EVC.held.ox, EVC.held.oy, EVC.held.r) + " scale(" + EVC.held.s + ")"); evHeldEl.setAttribute("opacity", 1); } else evHeldEl.setAttribute("opacity", 0);
     evWornEl.setAttribute("opacity", mode === "ev" && EVC && EVC.worn ? 1 : 0);
-    fxStep(evOn ? EVC.fx : null, tt, evOn ? 1 : 0);
+    var kOn = evOn && EVC.id === "m_kusu";
+    kusuG.setAttribute("opacity", kOn ? 1 : 0);
+    if (kOn) {
+      var ko = clamp((kusuT - 1.2) / .5, 0, 1);
+      kusuL.setAttribute("transform", "rotate(" + (-70 * ko) + " 980 112)"); kusuR.setAttribute("transform", "rotate(" + (70 * ko) + " 980 112)");
+      kusuB.setAttribute("opacity", ko); kusuB.setAttribute("transform", "translate(0 " + (-30 * (1 - ko)) + ")");
+    }
+    fxStep(evOn ? EVC.fx : (mode === "airdraw" ? "trail" : null), tt, (evOn || mode === "airdraw") ? 1 : 0);
 
     // props + onomatopoeia
     var po = clamp(cur.pa, 0, 1);
@@ -2325,7 +2426,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       tearEls[ti].setAttribute("cx", wx(side * 36 + side * 8 * tp)); tearEls[ti].setAttribute("cy", wy(-258 + 150 * tp * tp));
       tearEls[ti].setAttribute("opacity", Math.sin(Math.PI * tp) * tearK);
     }
-    hatG.setAttribute("opacity", isBdayNow() ? clamp(1 - cur.inv * 2, 0, 1) : 0);
+    hatG.setAttribute("opacity", (isBdayNow() || isSelfBdayNow()) ? clamp(1 - cur.inv * 2, 0, 1) : 0);
     stepConf(dt, now);
     // world overlays
     zzz.setAttribute("opacity", clamp(cur.zzz, 0, 1));
@@ -2547,6 +2648,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   function bandLine() { return chatLine(); }
 
   // 2026/10/8 限定：21時以降に開いたとき1回だけ
+  function selfBdayNow() { var d = new Date(); return d.getMonth() === 9 && d.getDate() === 8 && d.getFullYear() >= 2027; }
   function setliOk() { var d = new Date(); return !SV.setli && d.getFullYear() === 2026 && d.getMonth() === 9 && d.getDate() === 8 && d.getHours() >= 21; }
   L.mine = ["グミはスレンダーだな", "グミのOPはグミみたいだって、そいちゃんが言ってたなぁ", "グミ、つんつは人間の数字でいくつだ？４くらいか？", "グミ、つんつのパンツしらねぇか？", "俺はつんつ君。グミはうんち君。", "グミは歌が上手いからなぁ", "グミ、今日は配信か？無理せず頑張れよ", "グミ、なそは元気か？あいつはとにかくビッグだ", "グミ、たまには、そいちゃんに甘えろよ", "グミ、そいちゃんにOP送ってやれ", "グミ、セブンのわかめラーメンがうめぇんだ", "グミ、背中かいてくれ。かいかいかいかい", "俺の夢はこの部屋をゴージャスにする事だ", "猫もいいが、つんつもかわいがれよ", "みねちゃんとゴリは、仲良しか？", "つんつにだって、つらい過去はあるぞ", "つんつは、こう見えてムキムキだ。ムキーッ", "微炭酸、歌ってくれ", "グミ、今日のグミは何味だ？つんつにも一粒くれ", "グミ、歌い終わったあとの『ふぅ』って顔が、つんつは一番好きだ", "グミ、つんつはこの部屋で、いつでも待ってるぞ", "グミ、疲れたら、つんつの鼻水でも見て笑え", "グミ、つんつに何かあったら、ティッシュを頼むぞ", "グミ、今日もつんつを開いてくれて、ありがとな", "グミ、今日はどんな一日だった？つんつに話してみろ", "グミ、笑ってる顔が一番いいぞ", "グミ、そいちゃんは元気か？つんつは気になるぞ", "つんつは、強がってるけど、ほんとはさみしがりやだ", "つんつは、今日もグミに会えて、ごきげんだぞ", "グミ、つんつのモノマネ、やってみろ。ずびー", "グミ、つんつがうんち君って呼んだこと、まだ怒ってるか？", "グミ、歌う前に、のどあめなめとけよ", "グミ、なそは今日もビッグか？"];
   var MUSCLE = "つんつは、こう見えてムキムキだ。ムキーッ";
@@ -2560,6 +2662,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   function buildGreeting(ctx) {
     var d = new Date(), g = growthOf(ctx.openDays), i;
     if (ctx.first) return [pick(L.first), L.first2];
+    if (selfBdayNow() && !ctx.sameDay) return ["グミ、今日はつんつの誕生日だぞ！祝ってくれ"];
     if (setliOk()) { SV.setli = 1; save(); return [SETLI]; }
     var lonely = ctx.hours >= 12 && !(ctx.absence >= 2 && Math.random() < .5);
     if (!ctx.sameDay) {
@@ -2620,6 +2723,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       }
       setTimeout(function () { spawnConf(60); }, 600);
     } else q = buildGreeting(openCtx).concat([hintLine()]);
+    if (selfBdayNow()) setTimeout(function () { spawnConf(60); }, 600);
     var first = true;
     function next() {
       if (!q.length) return;
