@@ -1785,7 +1785,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   function kusuNext() { var m = 0; KUSU_AT.forEach(function (k) { if (SV.openDays >= k && SV.kusu < k) m = k; }); return m; }
   mk({ id: "m_kusu", kind: "time", win: [0, 0, 24, 0], ok: function () { return kusuNext() > 0; }, pose: "kusu", a: {}, dur: 9, held: null, worn: null, fx: null, say: [function () { return "グミ、つんつを開いて" + SV.kusu + "日目だぞ！くす玉を割るぞ"; }, "おめでとう！ありがとな、グミ"], target: null, onStart: function () { SV.kusu = kusuNext() || SV.kusu; save(); kusuDone = false; } });
   var GOLDLI = "ワンフレ、ゴールドだってな。おめでとうな。";
-  mk({ id: "m_gold", kind: "time", win: [15, 0, 18, 0], ok: function (d) { return !SV.gold && d.getFullYear() === 2026 && d.getMonth() === 9 && d.getDate() === 8; }, pose: "kusu", a: {}, dur: 10, held: null, worn: null, fx: null, say: [GOLDLI, "おめでとう！"], target: null, onStart: function () { SV.gold = 1; save(); kusuDone = false; } });
+  mk({ id: "m_gold2", kind: "time", win: [15, 0, 24, 0], ok: function (d) { return !SV.gold2 && d.getFullYear() === 2026 && d.getMonth() === 9 && d.getDate() === 8; }, pose: "kusu", a: {}, dur: 10, held: null, worn: null, fx: null, say: [GOLDLI, "おめでとう！"], target: null, onStart: function () { SV.gold2 = 1; save(); kusuDone = false; } });
   var kusuT = -1, kusuDone = false, kusuG = $("kusuG"), kusuL = $("kusuL"), kusuR = $("kusuR"), kusuB = $("kusuB");
   function seasonOk(e, d) {
     var x = (d.getMonth() + 1) * 100 + d.getDate(), a = e.from[0] * 100 + e.from[1], b = e.to[0] * 100 + e.to[1];
@@ -2518,7 +2518,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     var evOn = mode === "ev" && evPhase === 1 && EVC;
     if (evOn && EVC.held) { var hh = EVC.held.hand === "L" ? handL() : handR(); evHeldEl.setAttribute("transform", tr(hh, EVC.held.ox, EVC.held.oy, EVC.held.r) + " scale(" + EVC.held.s + ")"); evHeldEl.setAttribute("opacity", 1); } else evHeldEl.setAttribute("opacity", 0);
     evWornEl.setAttribute("opacity", mode === "ev" && EVC && EVC.worn ? 1 : 0);
-    var kOn = evOn && (EVC.id === "m_kusu" || EVC.id === "m_gold");
+    var kOn = evOn && (EVC.id === "m_kusu" || EVC.id === "m_gold2");
     kusuG.setAttribute("opacity", kOn ? 1 : 0);
     if (kOn) {
       var ko = clamp((kusuT - 1.2) / .5, 0, 1);
