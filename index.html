@@ -3237,23 +3237,22 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     function cnt(M) { return Object.keys(M).length; }
     function draw(sub) {
       gHtml(GAME_NAME.bingo, sub, cur ? "いま：" + cur : "…", '<div class="bingo"><div class="cards">' + gC.map(function (n) { return '<button type="button" data-g="' + n + '" class="card' + (gM[n] ? " mk" : "") + '">' + n + '</button>'; }).join("") + '</div><div class="tcard">' + tC.map(function (n) { return '<span' + (tM[n] ? ' class="mk"' : "") + '>' + n + '</span>'; }).join("") + '</div></div><div class="gs" style="margin-top:4px">グミのカード　／　つんつのカード</div>');
-      gOn(function (v) {
-        var n = +v; if (over || n !== cur || gM[n]) return;
-        gM[n] = 1; sndCoin(); draw("マーク！");
-        if (line(gC, gM)) end(true);
-      });
     }
     function end(win) { over = true; gClear(); say(win ? "ビンゴだと！？" : "ビンゴだぞ！", 2200); gT(function () { gFinish("bingo", win, 20); }, 1200); }
     function call() {
       if (over) return;
       k++;
       if (k >= order.length) { end(cnt(gM) > cnt(tM)); return; }
-      cur = order[k]; draw("カードの 同じ数字を タップ！"); say(cur + "！", 1400); sndPop();
+      cur = order[k]; draw("数字が出たら 自動でマークされる"); say(cur + "！", 1800); sndPop();
+      gT(function () {
+        if (over) return;
+        if (gC.indexOf(cur) >= 0) { gM[cur] = 1; sndCoin(); draw("マーク！"); if (line(gC, gM)) { end(true); return; } }
+      }, 1400);
       gT(function () {
         if (over) return;
         if (tC.indexOf(cur) >= 0 && Math.random() < .75) { tM[cur] = 1; draw(""); if (line(tC, tM)) { end(false); return; } }
-      }, 1100);
-      gT(call, 1900);
+      }, 2400);
+      gT(call, 3800);
     }
     gT(call, 800); draw("じゅんび…");
   }
