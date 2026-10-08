@@ -70,8 +70,8 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1
 .snd { all: unset; cursor: pointer; font: 700 .78rem var(--font-body); color: var(--muted); padding: 5px 9px; border: 1.5px solid var(--muted); border-radius: 999px; white-space: nowrap; }
 .snd[aria-pressed="true"] { color: var(--fg); border-color: var(--fg); }
 
-.stage { position: relative; overflow: hidden; border-radius: 16px; box-sizing: border-box; padding-bottom: 38px; min-height: 0; display: flex; align-items: center; justify-content: center; }
-.hit { all: unset; display: block; cursor: pointer; width: 100%; height: 100%; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.stage { position: relative; overflow: hidden; border-radius: 16px; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.hit { all: unset; display: block; cursor: pointer; width: 100%; height: 100%; box-sizing: border-box; padding-bottom: 38px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .hit:focus-visible, .snd:focus-visible, .tab:focus-visible, .food:focus-visible, .buy:focus-visible { outline: 3px solid var(--muted); outline-offset: 3px; }
 svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 .ink { stroke: var(--line); stroke-linecap: round; stroke-linejoin: round; }
@@ -212,6 +212,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 .dlg { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 6; background: var(--card); border: 3px solid var(--line); border-radius: 16px; padding: 14px 16px; text-align: center; font-weight: 700; display: grid; gap: 10px; min-width: 200px; }
 .dlg div { display: flex; gap: 10px; justify-content: center; }
 .dlg #dlgNo { background: transparent; color: var(--fg); }
+.mvbar { pointer-events: none; }
+.mvbar button { pointer-events: auto; }
 .mvbar[hidden], .dlg[hidden] { display: none; }
 .sec.ltd { color: #a32a12; font-size: .95rem; font-family: var(--font-display); font-weight: 400; }
 .sec.hintrow { font-weight: 500; }
