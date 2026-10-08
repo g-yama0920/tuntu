@@ -91,7 +91,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 
 .panel { background: var(--panel); border: 2px solid var(--line); border-radius: 20px 20px 0 0; padding: 10px 10px 0; margin-inline: -4px; }
 .tabs { display: flex; gap: 4px; margin-bottom: 8px; }
-.tab { all: unset; cursor: pointer; flex: 1; white-space: nowrap; font-size: .92rem; text-align: center; padding: 9px 0; border-radius: 12px; font-weight: 700; color: var(--muted); border: 2px solid transparent; }
+.tab { all: unset; cursor: pointer; flex: 1; white-space: nowrap; font-size: .84rem; text-align: center; padding: 9px 0; border-radius: 12px; font-weight: 700; color: var(--muted); border: 2px solid transparent; }
 .tab[aria-selected="true"] { background: var(--card); color: var(--fg); border-color: var(--line); }
 .foods { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
 .foods::-webkit-scrollbar { display: none; }
@@ -446,7 +446,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     <div class="say" id="say" hidden></div>
     <div class="pops" id="pops"></div>
     <div class="mvbar" id="mvbar" hidden><span id="mvT"></span><button id="mvX" type="button">やめる</button></div>
-    <div class="dlg" id="dlg" hidden><span id="dlgT"></span><div><button id="dlgYes" type="button">捨てる</button><button id="dlgNo" type="button">やめる</button></div></div>
+    <div class="dlg" id="dlg" hidden><span id="dlgT"></span><div><button id="dlgYes" type="button">しまう</button><button id="dlgNo" type="button">やめる</button></div></div>
     <div class="hud">
       <div class="streak" id="streak"></div>
       <div class="hudr"><button class="shoot" id="shoot" type="button">さつえい</button><button class="talk" id="talk" type="button">ひとりごと</button></div>
@@ -458,12 +458,14 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     <div class="tabs" role="tablist">
       <button class="tab" id="tabFood" role="tab" aria-selected="true" type="button">ごはん</button>
       <button class="tab" id="tabShop" role="tab" aria-selected="false" type="button">おみせ</button>
+      <button class="tab" id="tabFurn" role="tab" aria-selected="false" type="button">かぐ</button>
       <button class="tab" id="tabZukan" role="tab" aria-selected="false" type="button">ずかん</button>
       <button class="tab" id="tabAlbum" role="tab" aria-selected="false" type="button">アルバム</button>
     </div>
     <div class="fnote" id="fnote"></div>
     <div class="foods" id="foods" role="tabpanel"></div>
     <div class="shop" id="shop" role="tabpanel" hidden></div>
+    <div class="shop" id="furn" role="tabpanel" hidden></div>
     <div class="zukan" id="zukan" role="tabpanel" hidden></div>
     <div class="album" id="album" role="tabpanel" hidden></div>
   </section>
@@ -593,6 +595,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
         if (!SV.eaten || typeof SV.eaten !== "object") SV.eaten = {};
         if (!SV.pos || typeof SV.pos !== "object") SV.pos = {};
         if (!SV.ever || typeof SV.ever !== "object") SV.ever = {};
+        for (var oid in SV.owned) if (SV.owned[oid]) SV.ever[oid] = 1;
         if (!SV.evDone || typeof SV.evDone !== "object") SV.evDone = {};
       }
     }
@@ -1302,11 +1305,13 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     b.addEventListener("click", function () { feed(f.id); });
     foodsEl.appendChild(b);
   });
-  var tabZukan = $("tabZukan"), zukanEl = $("zukan"), tabAlbum = $("tabAlbum"), albumEl = $("album");
+  var tabFurn = $("tabFurn"), furnEl = $("furn"), furnSel = null, tabZukan = $("tabZukan"), zukanEl = $("zukan"), tabAlbum = $("tabAlbum"), albumEl = $("album");
   function setTab(which) {
     tabFood.setAttribute("aria-selected", which === "food");
     tabShop.setAttribute("aria-selected", which === "shop");
     tabZukan.setAttribute("aria-selected", which === "zukan");
+    tabFurn.setAttribute("aria-selected", which === "furn"); furnEl.hidden = which !== "furn";
+    if (which === "furn") { furnSel = null; renderFurn(); }
     tabAlbum.setAttribute("aria-selected", which === "album");
     albumEl.hidden = which !== "album";
     fnoteEl.hidden = which !== "food"; foodsEl.hidden = which !== "food"; shopEl.hidden = which !== "shop"; zukanEl.hidden = which !== "zukan";
@@ -1317,15 +1322,52 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   tabFood.addEventListener("click", function () { setTab("food"); });
   tabShop.addEventListener("click", function () { setTab("shop"); });
   tabZukan.addEventListener("click", function () { setTab("zukan"); });
+  tabFurn.addEventListener("click", function () { setTab("furn"); });
   tabAlbum.addEventListener("click", function () { setTab("album"); });
 
+
+  /* ---------- かぐ一覧: place / re-place / store ---------- */
+  function renderFurn() {
+    furnEl.innerHTML = "";
+    var e = env || computeEnv(), list = ALL_ITEMS.filter(function (it) { return SV.owned[it.id] || SV.ever[it.id]; });
+    var h = document.createElement("div"); h.className = "sec hintrow"; h.textContent = list.length ? "もっている家具（タップで 置く・置き直す）" : "まだ家具がないぞ。「おみせ」で買おう"; furnEl.appendChild(h);
+    list.forEach(function (it) {
+      var placed = !!SV.owned[it.id], off = SEASONAL.indexOf(it) >= 0 && !inSeason(it, e.date);
+      var row = document.createElement("div"); row.className = "row";
+      row.innerHTML = '<span class="nm">' + it.name + (it.tag ? '<em class="tag">' + it.tag + '</em>' : '') + '</span>';
+      var st = document.createElement("button"); st.type = "button"; st.className = "buy own";
+      st.style.cursor = "pointer"; st.textContent = placed ? "置いてある" : "しまってある";
+      st.addEventListener("click", function () { furnSel = furnSel === it.id ? null : it.id; renderFurn(); });
+      row.appendChild(st); furnEl.appendChild(row);
+      if (furnSel === it.id) {
+        var sub = document.createElement("div"); sub.className = "row"; sub.style.justifyContent = "flex-end";
+        if (off) { var n = document.createElement("span"); n.className = "nm"; n.style.fontSize = ".78rem"; n.textContent = "季節外れ：その時期に また見える"; sub.appendChild(n); }
+        var b1 = document.createElement("button"); b1.type = "button"; b1.className = "buy";
+        b1.textContent = placed ? "置き直す" : "家具を置く";
+        b1.addEventListener("click", function () { placeFurn(it.id, off); });
+        sub.appendChild(b1);
+        if (placed) {
+          var b2 = document.createElement("button"); b2.type = "button"; b2.className = "buy own"; b2.style.cursor = "pointer"; b2.textContent = "しまう";
+          b2.addEventListener("click", function () { delete SV.owned[it.id]; delete SV.pos[it.id]; furnSel = null; save(); renderRoom(); refreshPanels(); renderFurn(); say("しまったぞ", 1600); });
+          sub.appendChild(b2);
+        }
+        furnEl.appendChild(sub);
+      }
+    });
+  }
+  function placeFurn(id, off) {
+    SV.owned[id] = 1; SV.ever[id] = 1; delete SV.pos[id]; furnSel = null; save(); renderRoom(); refreshPanels(); renderFurn();
+    if (off) { say("季節になったら 出てくるぞ", 2200); return; }
+    selectItem(id);
+  }
   function secHead(text) { var h = document.createElement("div"); h.className = "sec"; h.textContent = text; shopEl.appendChild(h); }
   function itemRow(it, tag) {
     var row = document.createElement("div"); row.className = "row";
-    var own = !!SV.owned[it.id];
+    var own = !!SV.owned[it.id], kept = !own && !!SV.ever[it.id];
     row.innerHTML = '<span class="nm">' + it.name + (tag ? '<em class="tag">' + tag + '</em>' : '') + '</span>';
     var btn = document.createElement("button"); btn.type = "button";
     if (own) { btn.className = "buy own"; btn.textContent = "置いた"; btn.disabled = true; }
+    else if (kept) { btn.className = "buy own"; btn.textContent = "しまってある"; btn.disabled = true; }
     else {
       btn.className = "buy" + (SV.coins < it.price ? " poor" : "");
       btn.textContent = fmt(it.price) + " つんつ";
@@ -1359,14 +1401,14 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   function renderShop() {
     shopEl.innerHTML = "";
     var e = env || computeEnv(), L2 = shopLineup(e.date);
-    var hh = document.createElement("div"); hh.className = "sec hintrow"; hh.textContent = "置いた家具は タップで移動・長押しで捨てる"; shopEl.appendChild(hh);
+    var hh = document.createElement("div"); hh.className = "sec hintrow"; hh.textContent = "置いた家具は タップで移動・長押しでしまう（「かぐ」でまた置ける）"; shopEl.appendChild(hh);
     if (L2.limited) { var lh = document.createElement("div"); lh.className = "sec ltd"; lh.textContent = "本日限定家具！"; shopEl.appendChild(lh); itemRow(L2.limited, "きょうだけ"); }
     else { var nx = nextLimitedDate(e.date); secHead("限定家具：つぎは " + (nx.getMonth() + 1) + "月" + nx.getDate() + "日（毎月9・19・29日）"); }
     secHead("今月の季節家具"); L2.seasonal.forEach(function (it) { itemRow(it, it.tag); });
     secHead("今月の家具（月がかわると全部入れかわる）"); L2.regular.forEach(function (it) { itemRow(it); });
   }
   function buy(it) {
-    if (SV.owned[it.id]) return;
+    if (SV.owned[it.id] || SV.ever[it.id]) return;
     if (SV.coins < it.price) {
       var box = $("coinsBox"); box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake");
       say("つんつが たりないな", 1800); return;
@@ -1574,11 +1616,11 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     say(pick(["ここがいいな", "いい感じだな", "模様替えだな。悪くない"]), 1800);
   }
   function askDiscard(id) {
-    dlgId = id; $("dlgT").textContent = "「" + itemName(id) + "」を捨てる？"; dlg.hidden = false; selectItem(null);
+    dlgId = id; $("dlgT").textContent = "「" + itemName(id) + "」をしまう？"; dlg.hidden = false; selectItem(null);
   }
   $("dlgNo").addEventListener("click", function () { dlg.hidden = true; dlgId = null; });
   $("dlgYes").addEventListener("click", function () {
-    if (dlgId) { delete SV.owned[dlgId]; delete SV.pos[dlgId]; save(); renderRoom(); refreshPanels(); say("捨てたぞ。…ちょっとさみしいな", 2200); }
+    if (dlgId) { SV.ever[dlgId] = 1; delete SV.owned[dlgId]; delete SV.pos[dlgId]; save(); renderRoom(); refreshPanels(); say("しまったぞ。「かぐ」から また置けるぞ", 2400); }
     dlg.hidden = true; dlgId = null;
   });
   function lpCancel() { clearTimeout(lpTimer); }
