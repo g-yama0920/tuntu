@@ -1792,8 +1792,14 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   function selfBdayOn(d) { return d.getMonth() === 9 && d.getDate() === 8 && d.getFullYear() >= 2027; }
   HELD.cake = '<rect x="-30" y="-6" width="60" height="30" rx="6" fill="#f8e3c6" class="ink" stroke-width="3.5"/><path d="M-30 -2 Q-15 -14 0 -2 Q15 -14 30 -2" fill="#f08aa8" class="ink" stroke-width="3"/><rect x="-3" y="-28" width="6" height="22" fill="#7fb6e8" class="ink" stroke-width="2.5"/><ellipse cx="0" cy="-34" rx="5" ry="8" fill="#ffb347"/>';
   mk({ id: "t_selfbday", kind: "time", win: [0, 0, 24, 0], ok: selfBdayOn, pose: "proud", onStart: function () { var y = new Date().getFullYear(); if (SV.selfBdayGift !== y) { SV.selfBdayGift = y; SV.coins += 100; save(); showCoins(); setTimeout(function () { coinPop(100, "🎂"); sndCoin(); }, 2500); } }, a: { sfx: "ふふん" }, dur: 10, held: H(HELD.cake, "R", -4, -12, 0), worn: null, fx: "sparkle", say: ["今日はつんつの誕生日だぞ！グミ、祝ってくれ", "ケーキだ。ろうそく、ふーするぞ"], target: null });
-  var KUSU_AT = [7, 30, 100];
-  function kusuNext() { var m = 0; KUSU_AT.forEach(function (k) { if (SV.openDays >= k && SV.kusu < k) m = k; }); return m; }
+  // くす玉：7日・30日、そのあと100日ごと（100・200・300・400…）
+  function kusuNext() {
+    var d = SV.openDays || 0, k = SV.kusu || 0, m = 0, h = Math.floor(d / 100) * 100;
+    if (d >= 7 && k < 7) m = 7;
+    if (d >= 30 && k < 30) m = 30;
+    if (h >= 100 && k < h) m = h;
+    return m;
+  }
   mk({ id: "m_kusu", kind: "time", win: [0, 0, 24, 0], ok: function () { return kusuNext() > 0; }, pose: "kusu", a: {}, dur: 9, held: null, worn: null, fx: null, say: [function () { return "グミ、つんつを開いて" + SV.kusu + "日目だぞ！くす玉を割るぞ"; }, "おめでとう！ありがとな、グミ"], target: null, onStart: function () { SV.kusu = kusuNext() || SV.kusu; save(); kusuDone = false; } });
   var GOLDLI = "ワンフレ、ゴールドだってな。おめでとうな。";
   mk({ id: "m_gold2", kind: "time", win: [15, 0, 24, 0], ok: function (d) { return !SV.gold2 && d.getFullYear() === 2026 && d.getMonth() === 9 && d.getDate() === 8; }, pose: "kusu", a: {}, dur: 10, held: null, worn: null, fx: null, say: [GOLDLI, "おめでとう！"], target: null, onStart: function () { SV.gold2 = 1; save(); kusuDone = false; } });
