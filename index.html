@@ -1606,13 +1606,33 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       ".burst-text{font-family:'Dela Gothic One','Hiragino Sans','Yu Gothic',sans-serif;paint-order:stroke;stroke:" + cs.getPropertyValue("--bg").trim() + ";stroke-width:10px;stroke-linejoin:round;text-anchor:middle}" +
       ".rain{stroke:#eaf4fb;stroke-width:3;stroke-linecap:round;stroke-dasharray:10 30;opacity:.85}";
     var st = document.createElementNS("http://www.w3.org/2000/svg", "style"); st.textContent = css; clone.insertBefore(st, clone.firstChild);
-    var str = new XMLSerializer().serializeToString(clone).replace(/var\(\s*(--[\w-]+)\s*\)/g, function (m, n) { return cs.getPropertyValue(n).trim() || "#000"; });
+    var str = new XMLSerializer().serializeToString(clone).replace(/var\(\s*(--[\w-]+)\s*\)/g, function (m, n) { return cs.getPropertyValue(n).trim() || "#000"; }).replace(/font-family:([^;"]*"[^;]*);/g, function (m, v) { return "font-family:" + v.replace(/"/g, "'") + ";"; });
     var img = new Image();
     img.onload = function () {
       try {
         var cv = document.createElement("canvas"); cv.width = W; cv.height = H; var c = cv.getContext("2d");
         c.fillStyle = cs.getPropertyValue("--bg").trim() || "#fdf0d2"; c.fillRect(0, 0, W, H);
         c.drawImage(img, 0, 0, W, H);
+        try {
+          var sb = $("say"), sr = svg.getBoundingClientRect();
+          if (sb && !sb.hidden && sr.width > 0 && sb.textContent) {
+            var r = sb.getBoundingClientRect(), k = W / sr.width, ang = sb.classList.contains("angry");
+            var fs = 16.3 * k, pad = 14 * k, tx = String(sb.textContent), lh = fs * 1.4;
+            c.font = "700 " + fs + "px 'Zen Maru Gothic','Hiragino Maru Gothic ProN','Yu Gothic',sans-serif";
+            var maxw = r.width * k - pad * 2, lines = [], cur = "";
+            for (var i = 0; i < tx.length; i++) { var ch = tx[i]; if (cur && c.measureText(cur + ch).width > maxw) { lines.push(cur); cur = ch; } else cur += ch; }
+            if (cur) lines.push(cur);
+            var bw = r.width * k, bh = lines.length * lh + 16 * k, bx = (r.left - sr.left) * k, by = (r.top - sr.top) * k;
+            var tw = 0; lines.forEach(function (l) { tw = Math.max(tw, c.measureText(l).width); });
+            bw = Math.min(bw, tw + pad * 2); bx = (r.left - sr.left) * k + (r.width * k - bw) / 2;
+            c.fillStyle = ang ? "#ffe3dc" : "#fff"; c.strokeStyle = "#1c1a17"; c.lineWidth = 2.5 * k; c.lineJoin = "round";
+            var rd = 18 * k; c.beginPath(); c.moveTo(bx + rd, by); c.arcTo(bx + bw, by, bx + bw, by + bh, rd); c.arcTo(bx + bw, by + bh, bx, by + bh, rd); c.arcTo(bx, by + bh, bx, by, rd); c.arcTo(bx, by, bx + bw, by, rd); c.closePath(); c.fill(); c.stroke();
+            var mx = bx + bw / 2; c.beginPath(); c.moveTo(mx - 9 * k, by + bh - 1); c.lineTo(mx, by + bh + 12 * k); c.lineTo(mx + 9 * k, by + bh - 1); c.fill(); c.beginPath(); c.moveTo(mx - 9 * k, by + bh); c.lineTo(mx, by + bh + 12 * k); c.lineTo(mx + 9 * k, by + bh); c.stroke();
+            c.fillStyle = ang ? "#a32a12" : "#1c1a17"; c.textAlign = "center"; c.textBaseline = "middle";
+            lines.forEach(function (l, i) { c.fillText(l, bx + bw / 2, by + 8 * k + lh * (i + 0.5)); });
+            c.textBaseline = "bottom";
+          }
+        } catch (e2) {}
         var d = new Date(), t = d.getFullYear() + "/" + p2(d.getMonth() + 1) + "/" + p2(d.getDate()) + " " + p2(d.getHours()) + ":" + p2(d.getMinutes());
         c.font = "700 20px 'Zen Maru Gothic','Hiragino Maru Gothic ProN','Yu Gothic',sans-serif"; c.textBaseline = "bottom";
         c.lineWidth = 5; c.lineJoin = "round"; c.strokeStyle = "rgba(255,255,255,.9)"; c.fillStyle = "#4a3a22";
