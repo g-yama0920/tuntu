@@ -497,7 +497,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   ];
 
   /* ---------- save ---------- */
-  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0, setli: 0 };
+  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0, setli: 0, tokyo: -1 };
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) {
@@ -2105,6 +2105,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     first: ["…グミ、か。…まあいい、ここはおれの部屋だ", "お、グミか。…鼻水は見るなよ"],
     first2: "グミ、ごはんをくれるなら歓迎するぞ。つついてもいいが、やさしくな",
     gen: [
+      "グミはスレンダーだな", "グミのOPはグミみたいだって、そいちゃんが言ってたなぁ", "グミ、つんつは人間の数字でいくつだ？４くらいか？", "グミ、つんつのパンツしらねぇか？", "俺はつんつ君。グミはうんち君。",
       "グミは歌が上手いからなぁ", "グミ、今日は配信か？無理せず頑張れよ", "グミ、なそは元気か？あいつはとにかくビッグだ", "グミ、たまには、そいちゃんに甘えろよ", "グミ、そいちゃんにOP送ってやれ", "グミ、セブンのわかめラーメンがうめぇんだ", "グミ、背中かいてくれ。かいかいかいかい", "俺の夢はこの部屋をゴージャスにする事だ",
       "グミ、今日も風呂入るんだぞ", "グミ、ちゃんと飯食えよ", "グミ、今日もパーマ似合ってるぞ", "グミ、水ちゃんと飲んでるか", "グミ、無理しすぎるなよ",
       "グミ、歯みがきは忘れるなよ", "グミ、スマホばっかり見てると目が疲れるぞ", "グミ、たまには遠くを見ろよ", "グミ、姿勢が悪くなってるぞ。背すじ伸ばせ", "グミ、笑ってるほうが似合うぞ",
@@ -2358,7 +2359,18 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     if (openCtx.hours >= 24 && !openCtx.first) setTimeout(function () { if (isBase(mode)) startCry(performance.now()); }, 900);
   })();
 
+  function tokyoTick() {
+    var d = new Date(), h = d.getHours() + d.getMinutes() / 60, t = todayIdx();
+    if (h < 19 || h >= 19.5 || SV.tokyo === t || !isBase(mode) || performance.now() < 4500) return;
+    SV.tokyo = t; save();
+    var now = performance.now(); enterState("sing", now); nextChange = now + 24000;
+    say("東京は夜の7時〜♪", 4200);
+    setTimeout(function () { if (mode === "sing") say("東京は夜の7時〜♪", 4200); }, 9000);
+    setTimeout(function () { if (mode === "sing") say("東京は夜の7時〜♪♪", 4200); }, 17000);
+  }
+  setTimeout(tokyoTick, 5000);
   setInterval(function () {
+    tokyoTick();
     if (setliOk() && isBase(mode) && performance.now() > 3000) { SV.setli = 1; save(); say(SETLI, 4200); nextTalk = performance.now() + 20000; }
   }, 15000);
   document.addEventListener("visibilitychange", function () {
