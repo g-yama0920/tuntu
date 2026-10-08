@@ -1091,10 +1091,12 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 
   /* ---------- speech / coin pop ---------- */
   var sayEl = $("say"), sayTimer = 0;
+  // 表示時間：基本 + 1文字0.12秒。1日限定（セトリ）はさらに +2秒
+  function sayMs(text, ms) { return (ms || 2400) + 120 * String(text).length + (typeof SETLI !== "undefined" && text === SETLI ? 2000 : 0); }
   function say(text, ms, angry) {
     sayEl.textContent = text; sayEl.className = "say" + (angry ? " angry" : ""); sayEl.hidden = false;
     sayEl.style.animation = "none"; void sayEl.offsetWidth; sayEl.style.animation = "";
-    clearTimeout(sayTimer); sayTimer = setTimeout(function () { sayEl.hidden = true; }, ms || 2400);
+    clearTimeout(sayTimer); sayTimer = setTimeout(function () { sayEl.hidden = true; }, sayMs(text, ms));
   }
   function coinPop(n, tag) {
     var el = document.createElement("div");
@@ -2615,7 +2617,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       if (first || (isBase(mode) && sayEl.hidden)) { say(txt, 3800); if (typeof t !== "string") t.fn(); }
       else if (typeof t !== "string") { t.fn(); }
       first = false;
-      setTimeout(next, 4600);
+      setTimeout(next, sayMs(txt, 3800) + 800);
     }
     setTimeout(next, 700);
     if (openCtx.hours >= 24 && !openCtx.first) setTimeout(function () { if (isBase(mode)) startCry(performance.now()); }, 900);
