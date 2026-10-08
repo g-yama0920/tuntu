@@ -1683,6 +1683,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     cap: '<path d="M-44 -322 Q-10 -404 62 -360 Q68 -346 54 -342 Q24 -372 -4 -316Z" fill="#7fa8e0" class="ink" stroke-width="4"/><circle cx="62" cy="-352" r="11" fill="#fff" class="ink" stroke-width="3.5"/>',
     kabuto: '<path d="M-46 -316 Q2 -396 50 -316Z" fill="#c8483a" class="ink" stroke-width="4"/><path d="M-6 -362 Q2 -400 12 -362" fill="none" stroke="#f2c94c" stroke-width="7" stroke-linecap="round"/><path d="M-46 -316 H50" class="ink" stroke-width="5"/>',
     ghost: '<path d="M-62 -246 Q-76 -384 2 -392 Q80 -384 66 -246 L54 -254 L40 -242 L26 -254 L12 -242 L-2 -254 L-16 -242 L-30 -254 L-46 -242Z" fill="#fff" fill-opacity=".95" class="ink" stroke-width="4"/><ellipse cx="-33" cy="-268" rx="10" ry="13" fill="#1c1a17"/><ellipse cx="33" cy="-268" rx="10" ry="13" fill="#1c1a17"/>',
+    briefs: '<g transform="translate(0 14) translate(0 -316) scale(1.2 1.1) translate(0 316)"><path d="M-56 -316 Q-54 -348 -30 -360 Q-30 -396 0 -398 Q30 -396 30 -360 Q54 -348 56 -316 Q2 -300 -56 -316Z" fill="#fff" class="ink" stroke-width="4.5"/><path d="M-50 -326 Q-48 -346 -26 -356 M50 -326 Q48 -346 26 -356" fill="none" stroke="#c9d1d8" stroke-width="3.5" stroke-linecap="round"/><path d="M0 -392 V-364 Q0 -340 -16 -328 M0 -364 Q0 -340 16 -328" fill="none" stroke="#c9d1d8" stroke-width="3.5" stroke-linecap="round"/><path d="M-55 -323 Q2 -307 57 -323 L56 -312 Q2 -298 -55 -312Z" fill="#e6ebef" class="ink" stroke-width="3.5"/></g>',
+    briefsOn: '<g transform="translate(0 -10) translate(0 -78) scale(1 .7) translate(0 78)"><path d="M-118 -78 Q2 -62 122 -78 L116 -22 Q96 18 66 40 Q50 44 30 30 Q4 6 -22 30 Q-46 44 -62 40 Q-92 18 -112 -22Z" fill="#fff" class="ink" stroke-width="5"/><path d="M-116 -78 Q3 -62 120 -78 L118 -58 Q3 -42 -114 -58Z" fill="#e6ebef" class="ink" stroke-width="4"/><path d="M2 -52 V-6 Q2 14 -12 26 M2 -6 Q2 14 16 26" fill="none" stroke="#c9d1d8" stroke-width="4" stroke-linecap="round"/><path d="M-106 -20 Q-90 12 -62 34 M110 -20 Q94 12 66 34" fill="none" stroke="#c9d1d8" stroke-width="4" stroke-linecap="round"/></g>',
     santa: '<path d="M-42 -320 Q-30 -402 42 -382 Q64 -374 68 -350 Q42 -372 32 -320Z" fill="#d9373a" class="ink" stroke-width="4"/><rect x="-48" y="-330" width="98" height="20" rx="10" fill="#fff" class="ink" stroke-width="4"/><circle cx="66" cy="-350" r="11" fill="#fff" class="ink" stroke-width="3.5"/>'
   };
   function H(svg, hand, ox, oy, r, s) { return { svg: svg, hand: hand || "R", ox: ox || 0, oy: oy || 0, r: r || 0, s: s || 1 }; }
@@ -1909,6 +1911,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     [/風呂/, { pose: "sit", a: { sfx: "ほかほか" }, worn: WORN.towel, fx: "steam" }],
     [/歯/, { pose: "brush", held: H(HELD.brush, "R", -30, -10, -10) }],
     [/会ってまもない|まだ(始まった|週)/, { pose: "smile" }],
+    [/バンツ君/, { pose: "scold", worn: WORN.briefs }],
+    [/パンツあった/, { pose: "proud", a: { sfx: "ふふん" }, worn: WORN.briefsOn }],
     [/まだか/, { pose: "wait" }],
     [/忘れられた/, { pose: "sob" }],
     [/夢は/, { pose: "gaze", a: { pdy: -4, sfx: "きらきら" }, fx: "sparkle" }],
@@ -2763,7 +2767,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   // 2026/10/8 限定：21時以降に開いたとき1回だけ
   function selfBdayNow() { var d = new Date(); return d.getMonth() === 9 && d.getDate() === 8 && d.getFullYear() >= 2027; }
   function setliOk() { var d = new Date(); return !SV.setli && d.getFullYear() === 2026 && d.getMonth() === 9 && d.getDate() === 8 && d.getHours() >= 21; }
-  L.mine = ["グミはスレンダーだな", "グミのOPはグミみたいだって、そいちゃんが言ってたなぁ", "グミ、つんつは人間の数字でいくつだ？４くらいか？", "グミ、つんつのパンツしらねぇか？", "俺はつんつ君。グミはうんち君。", "グミは歌が上手いからなぁ", "グミ、今日は配信か？無理せず頑張れよ", "グミ、なそは元気か？あいつはとにかくビッグだ", "グミ、たまには、そいちゃんに甘えろよ", "グミ、そいちゃんにOP送ってやれ", "グミ、セブンのわかめラーメンがうめぇんだ", "グミ、背中かいてくれ。かいかいかいかい", "俺の夢はこの部屋をゴージャスにする事だ", "猫もいいが、つんつもかわいがれよ", "みねちゃんとゴリは、仲良しか？", "つんつにだって、つらい過去はあるぞ", "つんつは、こう見えてムキムキだ。ムキーッ", "微炭酸、歌ってくれ", "グミ、今日のグミは何味だ？つんつにも一粒くれ", "グミ、歌い終わったあとの『ふぅ』って顔が、つんつは一番好きだ", "グミ、つんつはこの部屋で、いつでも待ってるぞ", "グミ、疲れたら、つんつの鼻水でも見て笑え", "グミ、つんつに何かあったら、ティッシュを頼むぞ", "グミ、今日もつんつを開いてくれて、ありがとな", "グミ、今日はどんな一日だった？つんつに話してみろ", "グミ、笑ってる顔が一番いいぞ", "グミ、そいちゃんは元気か？つんつは気になるぞ", "つんつは、強がってるけど、ほんとはさみしがりやだ", "つんつは、今日もグミに会えて、ごきげんだぞ", "グミ、つんつのモノマネ、やってみろ。ずびー", "グミ、つんつがうんち君って呼んだこと、まだ怒ってるか？", "グミ、歌う前に、のどあめなめとけよ", "グミ、なそは今日もビッグか？"];
+  L.mine = ["つんつのパンツあったぞ", "誰がバンツ君だ！", "グミはスレンダーだな", "グミのOPはグミみたいだって、そいちゃんが言ってたなぁ", "グミ、つんつは人間の数字でいくつだ？４くらいか？", "グミ、つんつのパンツしらねぇか？", "俺はつんつ君。グミはうんち君。", "グミは歌が上手いからなぁ", "グミ、今日は配信か？無理せず頑張れよ", "グミ、なそは元気か？あいつはとにかくビッグだ", "グミ、たまには、そいちゃんに甘えろよ", "グミ、そいちゃんにOP送ってやれ", "グミ、セブンのわかめラーメンがうめぇんだ", "グミ、背中かいてくれ。かいかいかいかい", "俺の夢はこの部屋をゴージャスにする事だ", "猫もいいが、つんつもかわいがれよ", "みねちゃんとゴリは、仲良しか？", "つんつにだって、つらい過去はあるぞ", "つんつは、こう見えてムキムキだ。ムキーッ", "微炭酸、歌ってくれ", "グミ、今日のグミは何味だ？つんつにも一粒くれ", "グミ、歌い終わったあとの『ふぅ』って顔が、つんつは一番好きだ", "グミ、つんつはこの部屋で、いつでも待ってるぞ", "グミ、疲れたら、つんつの鼻水でも見て笑え", "グミ、つんつに何かあったら、ティッシュを頼むぞ", "グミ、今日もつんつを開いてくれて、ありがとな", "グミ、今日はどんな一日だった？つんつに話してみろ", "グミ、笑ってる顔が一番いいぞ", "グミ、そいちゃんは元気か？つんつは気になるぞ", "つんつは、強がってるけど、ほんとはさみしがりやだ", "つんつは、今日もグミに会えて、ごきげんだぞ", "グミ、つんつのモノマネ、やってみろ。ずびー", "グミ、つんつがうんち君って呼んだこと、まだ怒ってるか？", "グミ、歌う前に、のどあめなめとけよ", "グミ、なそは今日もビッグか？"];
   var MUSCLE = "つんつは、こう見えてムキムキだ。ムキーッ";
   function mineLine() {
     var l = pick(L.mine);
