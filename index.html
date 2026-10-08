@@ -179,6 +179,21 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 .game .bingo .tcard { width: 34%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; font-size: .72rem; }
 .game .bingo .tcard span { border: 1.5px solid var(--line); border-radius: 5px; padding: 3px 0; background: #f4c85a; }
 .game .bingo .tcard span.mk { background: #9bdcb4; }
+.game .track { display: grid; grid-template-columns: repeat(11, 1fr); gap: 2px; margin: 3px 0; font-size: .72rem; }
+.game .track span { height: 30px; border: 1.5px solid var(--line); border-radius: 6px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: .95rem; line-height: 1; }
+.game .track span small { font-size: .55rem; display: block; }
+.game .track span.sp { background: #ffe9a8; }
+.game .track span.go { background: #9bdcb4; }
+.game .row2 { font-size: .8rem; font-weight: 800; text-align: left; margin-top: 4px; }
+.game .colors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0; }
+.game .colors button { aspect-ratio: 1.3; padding: 0; border-radius: 14px; opacity: .55; transition: opacity .1s, transform .1s; }
+.game .colors button.lit { opacity: 1; transform: scale(1.06); box-shadow: 0 0 14px 4px rgba(255,255,255,.9); }
+.game .rail { position: relative; height: 70px; border: 2.5px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden; margin: 6px 0; }
+.game .rail .tg { position: absolute; top: 14px; width: 44px; height: 44px; margin-left: -22px; border-radius: 50% 50% 45% 45%; background: #f7e2ab; border: 2.5px solid var(--line); text-align: center; line-height: 40px; font-size: 1.1rem; }
+.game .rail .tg.hit { background: #ffb4a0; }
+.game .nums { display: flex; gap: 8px; justify-content: center; margin: 6px 0; }
+.game .nums button { flex: 1; max-width: 80px; font-size: 1.8rem; padding: 12px 0; background: #fff; }
+.game .nums button.back { background: #f4c85a; color: transparent; }
 .viewer { position: fixed; inset: 0; z-index: 50; background: rgba(20,14,6,.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; }
 .viewer[hidden] { display: none; }
 .viewer img { max-width: 100%; max-height: 68vh; border: 3px solid var(--line); border-radius: 10px; background: #fff; }
@@ -2927,7 +2942,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   /* ---------- つんつ君と勝負（じゃんけん毎日／ほか3種は気まぐれで1日1回） ---------- */
   var gameOn = false, gameLast = -1e9, gameEl = document.createElement("div");
   gameEl.className = "game"; gameEl.hidden = true; document.body.appendChild(gameEl);
-  var GAME_NAME = { jk: "じゃんけん", mem: "神経衰弱", dir: "あっち向いてホイ", fast: "早押し", baba: "ババ抜き", cups: "コップあて", nose: "鼻水のばし", mole: "もぐらたたき", jump: "ジャンプ競争", weigh: "重さくらべ", bingo: "ビンゴ" };
+  var GAME_NAME = { jk: "じゃんけん", mem: "神経衰弱", dir: "あっち向いてホイ", fast: "早押し", baba: "ババ抜き", cups: "コップあて", nose: "鼻水のばし", mole: "もぐらたたき", jump: "ジャンプ競争", weigh: "重さくらべ", bingo: "ビンゴ", sugo: "すごろく", simon: "いろ当て", stopw: "ストップウォッチ", ball: "ボール当て", big: "おっきい数字" };
   function shuf(a) { for (var i = a.length - 1; i > 0; i--) { var j = randInt(0, i), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   var HANDS = ["✊", "✌️", "✋"], DIRS = [["↑", "うえ"], ["↓", "した"], ["←", "ひだり"], ["→", "みぎ"]];
   var gTimers = [];
@@ -3249,6 +3264,126 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     }
     gT(call, 800); draw("じゅんび…");
   }
+
+  function sugoPlay() {
+    var G = 10, pos = [0, 0], rest = [0, 0], SP = { 2: 2, 4: "r", 6: -2, 8: 1 }, turn = 0, busy = false;
+    function mark(i) { if (i === G) return "🏁"; var v = SP[i]; return v === undefined ? "" : v === "r" ? "💤" : v > 0 ? "▶" : "◀"; }
+    function row(w) {
+      var h = '<div class="track">';
+      for (var i = 0; i <= G; i++) h += '<span class="' + (i === G ? "go" : SP[i] !== undefined ? "sp" : "") + '">' + (pos[w] === i ? (w ? '<i style="font-style:normal;background:#f7e2ab;border:1.5px solid #1c1a17;border-radius:50%;width:18px;height:18px;display:inline-block"></i>' : "🧍") : mark(i)) + '</span>';
+      return h + '</div>';
+    }
+    function draw(sub, canRoll) {
+      gHtml(GAME_NAME.sugo, sub, "", '<div class="row2">グミ</div>' + row(0) + '<div class="row2">つんつ</div>' + row(1) + '<div class="gr">' + (canRoll ? gBtn("roll", "サイコロをふる") : "") + '</div><div class="gs" style="margin-top:6px">▶ すすむ　◀ もどる　💤 1回休み　🏁 ゴール</div>');
+      if (canRoll) gOn(function () { turnRoll(0); });
+    }
+    function after(w, text) {
+      draw(text, false);
+      if (pos[w] >= G) { gT(function () { gFinish("sugo", w === 0, 20); }, 1100); return; }
+      gT(function () { nextTurn(1 - w); }, 1200);
+    }
+    function turnRoll(w) {
+      if (busy) return; busy = true;
+      var d = randInt(1, 3), nm = w ? "つんつ" : "グミ";
+      sndPop(); pos[w] = Math.min(G, pos[w] + d);
+      var txt = nm + "は " + d + " すすんだ";
+      draw(txt, false);
+      gT(function () {
+        var sp = SP[pos[w]];
+        if (pos[w] < G && sp !== undefined) {
+          if (sp === "r") { rest[w] = 1; txt = "💤 " + nm + "は 次 1回休み"; }
+          else { pos[w] = Math.max(0, Math.min(G, pos[w] + sp)); txt = (sp > 0 ? "▶ " : "◀ ") + nm + "は " + Math.abs(sp) + "マス " + (sp > 0 ? "すすむ" : "もどる"); }
+        }
+        busy = false; after(w, txt);
+      }, 900);
+    }
+    function nextTurn(w) {
+      if (rest[w]) { rest[w] = 0; draw((w ? "つんつ" : "グミ") + "は おやすみ", false); gT(function () { nextTurn(1 - w); }, 1100); return; }
+      if (w === 0) draw("グミの番：サイコロ(1〜3)", true);
+      else { draw("つんつの番…", false); gT(function () { turnRoll(1); }, 900); }
+    }
+    nextTurn(0);
+  }
+  function simonPlay() {
+    var seq = [], len = 4, cols = ["#e86a5c", "#f2c94c", "#6cc08b", "#6a9be8"], fx = [392, 494, 587, 698];
+    function btns(lock) { return '<div class="colors">' + cols.map(function (c, i) { return '<button type="button" data-g="' + i + '" style="background:' + c + '"></button>'; }).join("") + '</div>'; }
+    function stage() {
+      while (seq.length < len) seq.push(randInt(0, 3));
+      gHtml(GAME_NAME.simon, len - 3 + "だんめ：光る順番を おぼえろ", "", btns());
+      var bs = gameEl.querySelectorAll(".colors button");
+      seq.forEach(function (c, i) {
+        gT(function () { bs[c].classList.add("lit"); sndPop(); gT(function () { bs[c].classList.remove("lit"); }, 480); }, 900 + i * 750);
+      });
+      gT(function () {
+        gameEl.querySelector(".gs").textContent = "同じ順に タップ！";
+        var k = 0;
+        gOn(function (v) {
+          var c = +v; bs[c].classList.add("lit"); gT(function () { bs[c].classList.remove("lit"); }, 160); sndPop();
+          if (c !== seq[k]) { gClear(); gT(function () { gFinish("simon", false, 0); }, 500); return; }
+          k++;
+          if (k === seq.length) {
+            gClear(); sndCoin();
+            if (len >= 7) gT(function () { gFinish("simon", true, 20); }, 600);
+            else { len++; gT(stage, 900); }
+          }
+        });
+      }, 900 + seq.length * 750 + 200);
+    }
+    stage();
+  }
+  function stopwPlay() {
+    var T = 3, him = Math.max(.4, T + rand(-.3, .3)), t0 = 0, done = false, raf = 0;
+    gHtml(GAME_NAME.stopw, "ちょうど " + T + " 秒で とめろ！（途中から数字は見えなくなる）", '<span id="swn">0.00</span>', '<div class="gr">' + gBtn("go", "スタート", "big") + '</div>');
+    var n = gameEl.querySelector("#swn"), btn = gameEl.querySelector("button[data-g=go]"), running = false;
+    function loop() { if (done) return; var e = (performance.now() - t0) / 1000; n.textContent = e < 1 ? e.toFixed(2) : "？？？"; raf = requestAnimationFrame(loop); }
+    btn.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      if (!running) { running = true; t0 = performance.now(); btn.textContent = "とめる！"; loop(); return; }
+      if (done) return; done = true; cancelAnimationFrame(raf);
+      var me = (performance.now() - t0) / 1000; sndPop();
+      var em = Math.abs(me - T), hm = Math.abs(him - T);
+      gHtml(GAME_NAME.stopw, em < hm ? "グミのほうが " + T + "秒に近い！" : "つんつのほうが " + T + "秒に近い", "グミ " + me.toFixed(2) + "<small>vs</small>つんつ " + him.toFixed(2), "");
+      gT(function () { gFinish("stopw", em < hm, 20); }, 1700);
+    });
+  }
+  function ballPlay() {
+    var g = 0, h = 0, n = 0, ph = rand(0, 6), w = 2.3, last = 0, raf = 0, over = false, startT = performance.now(), pt = .55;
+    gHtml(GAME_NAME.ball, "10球で あてた数を きそう。つんつ君は 同時に なげる", "", '<div class="rail"><span id="bzone" style="position:absolute;left:22%;right:22%;top:0;bottom:0;background:#ffe9b8;opacity:.7"></span><span class="tg" id="btg">··</span></div><div class="gs" id="bsc"></div><div class="gr">' + gBtn("throw", "なげる！", "big") + '</div>');
+    var tg = gameEl.querySelector("#btg"), sc = gameEl.querySelector("#bsc"), btn = gameEl.querySelector("button[data-g=throw]"), rail = gameEl.querySelector(".rail");
+    function px() { var t = (performance.now() - startT) / 1000, r = rail.clientWidth; return r * (.5 + .38 * Math.sin(ph + t * w)); }
+    function loop() { if (over) return; tg.style.left = px() + "px"; raf = requestAnimationFrame(loop); }
+    function upd(msg) { sc.textContent = (msg ? msg + "　" : "") + "グミ " + g + " － " + h + " つんつ（" + n + "球め）"; }
+    upd(""); loop();
+    btn.addEventListener("pointerdown", function (e) {
+      e.preventDefault(); if (over) return;
+      var hit = Math.abs(px() - rail.clientWidth / 2) < rail.clientWidth * .28;
+      var th = Math.random() < pt; n++; if (hit) g++; if (th) h++;
+      tg.classList.add("hit"); setTimeout(function () { tg.classList.remove("hit"); }, 180);
+      if (hit) sndCoin(); else sndPop();
+      upd(hit ? "ヒット！" : "ミス…");
+      if (n >= 10 && g !== h) { over = true; cancelAnimationFrame(raf); gT(function () { gFinish("ball", g > h, 20); }, 900); }
+      else if (n >= 10) upd("同点！ もう1球");
+    });
+  }
+  function bigPlay() {
+    var me = [0, 0, 0].map(function () { return randInt(1, 9); }), him = [0, 0, 0].map(function () { return randInt(1, 9); }), swapped = false;
+    function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
+    function draw() {
+      gHtml(GAME_NAME.big, "3まいの合計が 大きいほうが勝ち", "", '<div class="gs">グミのカード' + (swapped ? "" : "（1まいだけ 引きなおせる）") + ' 合計 ' + sum(me) + '</div><div class="nums">' + me.map(function (n, i) { return '<button type="button" data-g="' + i + '">' + n + '</button>'; }).join("") + '</div><div class="gs">つんつのカード</div><div class="nums">' + him.map(function () { return '<button type="button" class="back">？</button>'; }).join("") + '</div><div class="gr">' + gBtn("ok", "これで勝負！") + '</div>');
+      gOn(function (v) {
+        if (v === "ok") return reveal();
+        if (swapped) return; swapped = true; me[+v] = randInt(1, 9); sndPop(); draw();
+      });
+    }
+    function reveal() {
+      if (sum(him) <= 13) { var lo = him.indexOf(Math.min.apply(null, him)); him[lo] = randInt(1, 9); }
+      var a = sum(me), b = sum(him);
+      gHtml(GAME_NAME.big, a === b ? "同点！ もう一回" : a > b ? "グミの勝ち！" : "つんつの勝ち！", "グミ " + a + "<small>vs</small>つんつ " + b, '<div class="nums">' + him.map(function (n) { return '<button type="button">' + n + '</button>'; }).join("") + '</div>');
+      sndPop();
+      gT(function () { if (a === b) { me = [0, 0, 0].map(function () { return randInt(1, 9); }); him = [0, 0, 0].map(function () { return randInt(1, 9); }); swapped = false; draw(); } else gFinish("big", a > b, 20); }, 1700);
+    }
+    draw();
+  }
   function startGame(kind) {
     gameOn = true; gameEl.hidden = false;
     if (kind === "jk") jankenPlay("jk", "", function (win) { gFinish("jk", win, 10); });
@@ -3261,6 +3396,11 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     else if (kind === "jump") jumpPlay();
     else if (kind === "weigh") weighPlay();
     else if (kind === "bingo") bingoPlay();
+    else if (kind === "sugo") sugoPlay();
+    else if (kind === "simon") simonPlay();
+    else if (kind === "stopw") stopwPlay();
+    else if (kind === "ball") ballPlay();
+    else if (kind === "big") bigPlay();
     else memPlay();
   }
   function invite(kind) {
@@ -3281,7 +3421,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     var wait = function (k) { return SV[k + "LaterDay"] === t && Date.now() < (SV[k + "Later"] || 0); };
     if (SV.jkDay !== t && !wait("jk")) { invite("jk"); return; }
     if (SV.gmDay !== t && !wait("gm")) {
-      if (SV.gmKindDay !== t) { SV.gmKind = ["mem", "dir", "fast", "baba", "cups", "nose", "mole", "jump", "weigh", "bingo"][randInt(0, 9)]; SV.gmKindDay = t; save(); }
+      if (SV.gmKindDay !== t) { SV.gmKind = ["mem", "dir", "fast", "baba", "cups", "nose", "mole", "jump", "weigh", "bingo", "sugo", "simon", "stopw", "ball", "big"][randInt(0, 14)]; SV.gmKindDay = t; save(); }
       invite(SV.gmKind);
     }
   }, 7000);
