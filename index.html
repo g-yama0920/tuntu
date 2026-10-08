@@ -1662,6 +1662,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     ["t_smell", [17, 0, 17, 30], "sniff", {}, 8, null, null, "steam", null, ["グミ、いいにおいがするぞ"]],
     ["t_stretch", [21, 30, 22, 0], "stretch", {}, 9, null, null, null, null, ["グミ、今日もおつかれさんだぞ"]],
     ["t_star", [23, 0, 23, 30], "gaze", { pdy: -4, sfx: "きらきら" }, 9, null, null, "stars", "window", ["グミ、今日もいい日だったか？"]],
+    ["t_tokyo", [18, 30, 19, 0], "wait", {}, 10, null, null, null, "window", ["東京は夜の何時だ？まだかー"]],
     ["t_ghost", [3, 0, 3, 30], "scared", {}, 8, null, null, null, null, ["グミ、こわいから起きててくれ"]]
   ].forEach(function (r) { mk({ id: r[0], kind: "time", win: r[1], pose: r[2], a: r[3], dur: r[4], held: r[5], worn: r[6], fx: r[7], target: r[8], say: r[9] }); });
   // 季節：from/to=[月,日]、hours=[開始h,終了h]
@@ -1731,6 +1732,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     ["s_acorn", "pet", {}, H(HELD.acorn, "R", -20, -10, 0), null, null, ["グミ、どんぐり集めたぞ"]]
   ].forEach(function (r) { mk({ id: "f_" + r[0], req: r[0], kind: "furn", pose: r[1], a: r[2], dur: 9, held: r[3], worn: r[4], fx: r[5], say: r[6], target: "furn" }); });
 
+  mk({ id: "m_muscle", kind: "free", pose: "muscle", a: {}, dur: 5, held: null, worn: null, fx: null, say: null, target: null });
   function seasonOk(e, d) {
     var x = (d.getMonth() + 1) * 100 + d.getDate(), a = e.from[0] * 100 + e.from[1], b = e.to[0] * 100 + e.to[1];
     if (!(a <= b ? (x >= a && x <= b) : (x >= a || x <= b))) return false;
@@ -1742,6 +1744,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     var d = new Date(), t = todayIdx(), tm = [], ot = [];
     EVL.forEach(function (e) {
       if (SV.evDone[e.id] === t) return;
+      if (e.kind === "free") return;
       if (e.kind === "time") { if (winOk(e, d)) tm.push(e); }
       else if (e.kind === "season") { if (seasonOk(e, d)) ot.push(e); }
       else if (SV.owned[e.req]) ot.push(e);
@@ -1754,7 +1757,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     try { var b = g.getBBox(), p = (SV.pos && SV.pos[id]) || { x: 0 }; return clamp(b.x + b.width / 2 + p.x - CX, -300, 300); } catch (e) { return 0; }
   }
   function startEvent(e, now) {
-    var d = new Date(); SV.evDone[e.id] = todayIdx(); save();
+    var d = new Date(); if (e.kind !== "free") { SV.evDone[e.id] = todayIdx(); save(); }
     EVC = e; mode = "ev"; modeT0 = now; evSaid = 0; evPhase = 0;
     evX = e.target === "window" ? -300 : e.target === "furn" ? furnX(e.req) : e.target === "window0" ? cxBase : cxBase;
     if (e.target === "window0") evX = -240;
@@ -1823,6 +1826,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     blow: function (ct, T, R) { var c = ct % 3; T.arx = 50; T.ary = -150; T.ara = -165; T.ars = 1.5; if (c < 1.5) { T.L = REST - 42; T.mouth = .8; R.sfx = "ずび…"; } else { R.eye = "squint"; T.L = 20; T.mouth = 1.2; T.sy = 1 + .04 * Math.sin(ct * 30); R.sfx = "ブビー！"; } },
     pet: function (ct, T, R) { T.arx = 70; T.ary = -110; T.ara = 20 + 10 * Math.sin(ct * 3); T.alx = 96; T.ala = 20; R.eye = "happy"; T.mouth = 1; T.sway = 3 * Math.sin(ct * 1.5); R.sfx = "なでなで"; },
     read: function (ct, T, R) { SITP(T); T.book = 1; T.pdy = 4; T.pdx = 3 * Math.sin(ct * 1.3); T.mouth = .45; T.L = REST - 4; T.alx = 112; T.aly = -88; T.ala = 6; T.arx = 62; T.ary = -92; T.ara = 84; T.rot = 1.5; },
+    muscle: function (ct, T, R) { var pu = .5 + .5 * Math.sin(ct * 7); R.eye = "squint"; T.alx = 104; T.aly = -122; T.ala = -95; T.als = 1.3; T.arx = 104; T.ary = -122; T.ara = -95; T.ars = 1.3; T.sx = 1.05 + .03 * pu; T.sy = 1.04; T.mouth = 1.6; T.dy = -3 * pu; T.rot = 1.5 * Math.sin(ct * 14); T.L = REST + 4; R.sfx = "ムキーッ"; },
+    wait: function (ct, T, R) { T.alx = 44; T.aly = -100; T.ala = 40; T.arx = 44; T.ary = -100; T.ara = 40; T.lly = -7 * Math.max(0, Math.sin(ct * 6)); T.pdx = -8; T.mouth = .7; T.rot = 2 * Math.sin(ct * 1.5); T.L = REST - 8; R.sfx = ct % 4 > 2 ? "まだかー" : "そわそわ"; },
     block: function (ct, T, R) { var sq = .5 - .5 * Math.cos(ct * 2.2); T.dy = 38 * sq; T.sy = 1 - .08 * sq; T.llr = 50 * sq; T.lrr = -50 * sq; T.ala = -60 * sq; T.ara = -60 * sq; T.mouth = 1 + .4 * sq; T.L = REST - 10 * sq; R.sfx = sq > .9 ? "ひとーつ" : ""; }
   };
 
@@ -2543,8 +2548,13 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 
   // 2026/10/8 限定：21時以降に開いたとき1回だけ
   function setliOk() { var d = new Date(); return !SV.setli && d.getFullYear() === 2026 && d.getMonth() === 9 && d.getDate() === 8 && d.getHours() >= 21; }
-  L.mine = ["グミはスレンダーだな", "グミのOPはグミみたいだって、そいちゃんが言ってたなぁ", "グミ、つんつは人間の数字でいくつだ？４くらいか？", "グミ、つんつのパンツしらねぇか？", "俺はつんつ君。グミはうんち君。", "グミは歌が上手いからなぁ", "グミ、今日は配信か？無理せず頑張れよ", "グミ、なそは元気か？あいつはとにかくビッグだ", "グミ、たまには、そいちゃんに甘えろよ", "グミ、そいちゃんにOP送ってやれ", "グミ、セブンのわかめラーメンがうめぇんだ", "グミ、背中かいてくれ。かいかいかいかい", "俺の夢はこの部屋をゴージャスにする事だ"];
-  function mineLine() { return pick(L.mine); }
+  L.mine = ["グミはスレンダーだな", "グミのOPはグミみたいだって、そいちゃんが言ってたなぁ", "グミ、つんつは人間の数字でいくつだ？４くらいか？", "グミ、つんつのパンツしらねぇか？", "俺はつんつ君。グミはうんち君。", "グミは歌が上手いからなぁ", "グミ、今日は配信か？無理せず頑張れよ", "グミ、なそは元気か？あいつはとにかくビッグだ", "グミ、たまには、そいちゃんに甘えろよ", "グミ、そいちゃんにOP送ってやれ", "グミ、セブンのわかめラーメンがうめぇんだ", "グミ、背中かいてくれ。かいかいかいかい", "俺の夢はこの部屋をゴージャスにする事だ", "猫もいいが、つんつもかわいがれよ", "みねちゃんとゴリは、仲良しか？", "つんつにだって、つらい過去はあるぞ", "つんつは、こう見えてムキムキだ。ムキーッ", "微炭酸、歌ってくれ"];
+  var MUSCLE = "つんつは、こう見えてムキムキだ。ムキーッ";
+  function mineLine() {
+    var l = pick(L.mine);
+    if (l === MUSCLE && typeof startEvent === "function" && isBase(mode) && mode !== "sleep" && !STATES[mode].short) startEvent(EVMAP.m_muscle, performance.now());
+    return l;
+  }
   L.lonely = ["グミ、つんつは寂しかったぞ", "グミ、やっと来たな。ずっと待ってたぞ", "グミ、おそいぞ。…でも来てくれてうれしいぞ", "グミ、ひとりで部屋にいるの、けっこう寂しいんだぞ", "グミ、会いたかったぞ。…べつに鼻水は関係ないぞ", "グミ、おまえがいない間、窓ばっかり見てたぞ", "グミ、おかえり。つんつは寂しくて鼻水が止まらなかったぞ", "グミ、来てくれたのか。…ずっと待ってたんだぞ", "グミ、ひさしぶりだな。つんつ、ちょっと寂しかったぞ", "グミ、ほっとかれたかと思ったぞ。…来てくれてよかった", "グミ、待ってる間ずっと、グミのこと考えてたぞ", "グミ、おまえの顔が見られて安心したぞ"];
   var SETLI = "グミ、シュワシュワセトリ良かったぞ。つんつは感動して鼻水たれたぞ";
   function buildGreeting(ctx) {
