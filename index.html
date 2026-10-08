@@ -205,8 +205,9 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flick .5s ease-in-out infinite alternate; }
 @keyframes flick { from { transform: scale(1, 1) rotate(-4deg); } to { transform: scale(.85, 1.2) rotate(4deg); } }
 .itm { cursor: pointer; }
+#propG, #p_tv, #p_easel { pointer-events: none; }
 .itm.sel { filter: drop-shadow(0 0 7px #f2b92e) drop-shadow(0 0 3px #f2b92e); }
-.mvbar { position: absolute; left: 8px; right: 8px; bottom: 44px; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--card); border: 2.5px solid var(--line); border-radius: 14px; padding: 6px 10px; font-weight: 700; font-size: .8rem; }
+.mvbar { position: absolute; left: 8px; right: 8px; top: 6px; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--card); border: 2.5px solid var(--line); border-radius: 14px; padding: 6px 10px; font-weight: 700; font-size: .8rem; }
 .mvbar button, .dlg button { all: unset; white-space: nowrap; cursor: pointer; background: var(--coin); color: #1c1a17; border: 2px solid var(--line); border-radius: 10px; padding: 5px 12px; font-weight: 700; font-size: .85rem; }
 .dlg { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 6; background: var(--card); border: 3px solid var(--line); border-radius: 16px; padding: 14px 16px; text-align: center; font-weight: 700; display: grid; gap: 10px; min-width: 200px; }
 .dlg div { display: flex; gap: 10px; justify-content: center; }
