@@ -535,7 +535,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   ];
 
   /* ---------- save ---------- */
-  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0, setli: 0, tokyo: -1, evDone: {}, kusu: 0, jkDay: -1, gmDay: -1, gmKind: "", gmKindDay: -1 };
+  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0, setli: 0, tokyo: -1, evDone: {}, kusu: 0, jkDay: -1, gmDay: -1, gmKind: "", gmKindDay: -1, jkLater: 0, jkLaterDay: -1, gmLater: 0, gmLaterDay: -1 };
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) {
@@ -3047,17 +3047,18 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     var rw = kind === "jk" ? 10 : 20;
     gHtml("つんつ君から しょうぶ！", GAME_NAME[kind] + "：勝つと " + rw + "つんつ", "", '<div class="gr">' + gBtn("yes", "あそぶ") + gBtn("no", "あとで", "sub") + '</div>');
     gOn(function (v) {
-      var t = todayIdx(); if (kind === "jk") SV.jkDay = t; else SV.gmDay = t; save();
-      if (v === "yes") { gameEl.hidden = false; startGame(kind); }
-      else { say("むぅ、じゃあ また あしただな", 2600); gClose(); }
+      var t = todayIdx(), lk = kind === "jk" ? "jk" : "gm";
+      if (v === "yes") { SV[lk + "Day"] = t; save(); gameEl.hidden = false; startGame(kind); }
+      else { SV[lk + "Later"] = Date.now() + 3600000; SV[lk + "LaterDay"] = t; save(); say("むぅ、じゃあ あとでな。また誘うぞ", 2800); gClose(); }
     });
   }
   setInterval(function () {
     if (gameOn || !isBase(mode) || mode === "sleep" || mode === "read" || STATES[mode].short || STATES[mode].angry || !sayEl.hidden) return;
     var now = performance.now(); if (now < 25000 || now - gameLast < 180000) return;
     var t = todayIdx();
-    if (SV.jkDay !== t) { invite("jk"); return; }
-    if (SV.gmDay !== t) {
+    var wait = function (k) { return SV[k + "LaterDay"] === t && Date.now() < (SV[k + "Later"] || 0); };
+    if (SV.jkDay !== t && !wait("jk")) { invite("jk"); return; }
+    if (SV.gmDay !== t && !wait("gm")) {
       if (SV.gmKindDay !== t) { SV.gmKind = ["mem", "dir", "fast"][randInt(0, 2)]; SV.gmKindDay = t; save(); }
       invite(SV.gmKind);
     }
