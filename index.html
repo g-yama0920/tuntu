@@ -89,8 +89,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
 .panel { background: var(--panel); border: 2px solid var(--line); border-radius: 20px 20px 0 0; padding: 10px 10px 0; margin-inline: -4px; }
-.tabs { display: flex; gap: 8px; margin-bottom: 8px; }
-.tab { all: unset; cursor: pointer; flex: 1; text-align: center; padding: 9px 0; border-radius: 12px; font-weight: 700; color: var(--muted); border: 2px solid transparent; }
+.tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.tab { all: unset; cursor: pointer; flex: 1; white-space: nowrap; font-size: .92rem; text-align: center; padding: 9px 0; border-radius: 12px; font-weight: 700; color: var(--muted); border: 2px solid transparent; }
 .tab[aria-selected="true"] { background: var(--card); color: var(--fg); border-color: var(--line); }
 .foods { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
 .foods::-webkit-scrollbar { display: none; }
@@ -116,6 +116,29 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 .streak .dots { letter-spacing: .12em; color: var(--coin); }
 .streak.done { background: var(--coin); color: #1c1a17; }
 .talk { all: unset; pointer-events: auto; cursor: pointer; background: var(--card); border: 2px solid var(--line); border-radius: 999px; padding: 4px 10px; font: 700 .74rem var(--font-body); color: var(--fg); white-space: nowrap; }
+.hudr { display: flex; gap: 4px; align-items: flex-end; flex: none; }
+.hud .streak { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 4px 8px; font-size: .68rem; }
+.hud .shoot, .hud .talk { padding: 4px 8px; font-size: .7rem; }
+.shoot { all: unset; pointer-events: auto; cursor: pointer; background: var(--coin); border: 2px solid var(--line); border-radius: 999px; padding: 4px 10px; font: 700 .74rem var(--font-body); color: #1c1a17; white-space: nowrap; }
+.shoot:focus-visible { outline: 3px solid var(--muted); outline-offset: 3px; }
+.flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 8; }
+.flash.on { animation: flashA .35s ease-out; }
+@keyframes flashA { 0% { opacity: .9; } 100% { opacity: 0; } }
+.album { max-height: 150px; overflow-y: auto; padding-bottom: 12px; }
+.album[hidden] { display: none; }
+.alh { font-weight: 700; font-size: .85rem; color: var(--muted); margin-bottom: 6px; }
+.alg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.alg button { all: unset; cursor: pointer; display: block; border: 2px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--card); }
+.alg img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+.alg button:focus-visible { outline: 3px solid var(--muted); outline-offset: 2px; }
+.alempty { font-size: .85rem; color: var(--muted); text-align: center; padding: 10px 0; line-height: 1.6; }
+.viewer { position: fixed; inset: 0; z-index: 50; background: rgba(20,14,6,.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; }
+.viewer[hidden] { display: none; }
+.viewer img { max-width: 100%; max-height: 68vh; border: 3px solid var(--line); border-radius: 10px; background: #fff; }
+.viewer .vd { color: #fff; font-weight: 700; font-size: .85rem; }
+.viewer .vb { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.viewer .vb button { all: unset; cursor: pointer; background: var(--coin); color: #1c1a17; border: 2px solid var(--line); border-radius: 10px; padding: 7px 14px; font-weight: 700; font-size: .88rem; }
+.viewer .vb button.sub { background: var(--card); }
 .talk:focus-visible { outline: 3px solid var(--muted); outline-offset: 3px; }
 .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flick .5s ease-in-out infinite alternate; }
 @keyframes flick { from { transform: scale(1, 1) rotate(-4deg); } to { transform: scale(.85, 1.2) rotate(4deg); } }
@@ -148,7 +171,6 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 </style>
 </head>
 <body>
-
 
 <div class="app">
   <header>
@@ -351,8 +373,9 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     <div class="dlg" id="dlg" hidden><span id="dlgT"></span><div><button id="dlgYes" type="button">捨てる</button><button id="dlgNo" type="button">やめる</button></div></div>
     <div class="hud">
       <div class="streak" id="streak"></div>
-      <button class="talk" id="talk" type="button">ひとりごと</button>
+      <div class="hudr"><button class="shoot" id="shoot" type="button">さつえい</button><button class="talk" id="talk" type="button">ひとりごと</button></div>
     </div>
+    <div class="flash" id="flash"></div>
   </main>
 
   <section class="panel foot" aria-label="操作パネル">
@@ -360,12 +383,19 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       <button class="tab" id="tabFood" role="tab" aria-selected="true" type="button">ごはん</button>
       <button class="tab" id="tabShop" role="tab" aria-selected="false" type="button">おみせ</button>
       <button class="tab" id="tabZukan" role="tab" aria-selected="false" type="button">ずかん</button>
+      <button class="tab" id="tabAlbum" role="tab" aria-selected="false" type="button">アルバム</button>
     </div>
     <div class="fnote" id="fnote"></div>
     <div class="foods" id="foods" role="tabpanel"></div>
     <div class="shop" id="shop" role="tabpanel" hidden></div>
     <div class="zukan" id="zukan" role="tabpanel" hidden></div>
+    <div class="album" id="album" role="tabpanel" hidden></div>
   </section>
+</div>
+<div class="viewer" id="viewer" hidden>
+  <img id="vimg" alt="つんつ君の写真">
+  <div class="vd" id="vdate"></div>
+  <div class="vb"><button id="vsave" type="button">ほぞん・共有</button><button id="vdel" type="button">けす</button><button id="vclose" class="sub" type="button">とじる</button></div>
 </div>
 
 <script>
@@ -1114,9 +1144,10 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     grr: [T_(0, .35, 130, 70, .22, "sawtooth"), N_(0, .3, 400, 200, 1, .2, .02)],
     munch: [0, 1, 2, 3].map(function (i) { return T_(i * .28, .1, 260, 140, .18, "triangle"); }),
     blow: [N_(0, .4, 600, 300, 1.2, .5, .02), T_(0, .35, 210, 110, .22, "sawtooth")],
-    pop: [T_(0, .12, 500, 900, .12, "triangle")]
+    pop: [T_(0, .12, 500, 900, .12, "triangle")],
+    shutter: [N_(0, .05, 3600, 2200, .9, .9, .004), T_(0, .04, 1900, 1500, .08, "square"), N_(.09, .08, 2600, 1200, .9, .9, .004), T_(.09, .05, 1300, 1000, .08, "square")]
   };
-  var LEVEL = { sniff: .6, sneeze: .9, boing: .6, coin: .55, grr: .7, munch: .6, blow: .8, pop: .55 };
+  var LEVEL = { sniff: .6, sneeze: .9, boing: .6, coin: .55, grr: .7, munch: .6, blow: .8, pop: .55, shutter: .7 };
   function getUri(name) {
     if (URIS[name]) return URIS[name];
     var f = synth(SPECS[name]), m = 0, i;
@@ -1156,6 +1187,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   function sndMunch() { playSnd("munch"); }
   function sndBlow() { playSnd("blow"); }
   function sndPop() { playSnd("pop"); }
+  function sndShutter() { playSnd("shutter"); }
 
   /* ---------- panel: food / shop ---------- */
   var fnoteEl = $("fnote"), foodsEl = $("foods"), shopEl = $("shop"), tabFood = $("tabFood"), tabShop = $("tabShop");
@@ -1166,18 +1198,22 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     b.addEventListener("click", function () { feed(f.id); });
     foodsEl.appendChild(b);
   });
-  var tabZukan = $("tabZukan"), zukanEl = $("zukan");
+  var tabZukan = $("tabZukan"), zukanEl = $("zukan"), tabAlbum = $("tabAlbum"), albumEl = $("album");
   function setTab(which) {
     tabFood.setAttribute("aria-selected", which === "food");
     tabShop.setAttribute("aria-selected", which === "shop");
     tabZukan.setAttribute("aria-selected", which === "zukan");
+    tabAlbum.setAttribute("aria-selected", which === "album");
+    albumEl.hidden = which !== "album";
     fnoteEl.hidden = which !== "food"; foodsEl.hidden = which !== "food"; shopEl.hidden = which !== "shop"; zukanEl.hidden = which !== "zukan";
     if (which === "shop") renderShop();
     if (which === "zukan") renderZukan();
+    if (which === "album") renderAlbum();
   }
   tabFood.addEventListener("click", function () { setTab("food"); });
   tabShop.addEventListener("click", function () { setTab("shop"); });
   tabZukan.addEventListener("click", function () { setTab("zukan"); });
+  tabAlbum.addEventListener("click", function () { setTab("album"); });
 
   function secHead(text) { var h = document.createElement("div"); h.className = "sec"; h.textContent = text; shopEl.appendChild(h); }
   function itemRow(it, tag) {
@@ -1370,6 +1406,29 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     mode = "refuse"; modeT0 = now;
     say(pick(L.full), 2600, false); sndPop();
   }
+  var REACTS = ["sneeze", "giggle", "hop", "spin", "shy", "stretch", "dizzy", "pout", "shrink", "jelly"];
+  var RDUR = { giggle: 1.7, hop: 1.2, spin: 1.1, shy: 2.1, stretch: 1.7, dizzy: 2.3, pout: 1.9, shrink: 1.3, jelly: 1.8 };
+  var RSAY = {
+    giggle: ["くすぐったいぞ、グミ", "あはは、やめろよグミ", "ひひっ、くすぐったいぞ"],
+    hop: ["うわっ！びっくりしたぞ", "おっと、グミか", "ふいうちはずるいぞ"],
+    spin: ["くるっ！", "目が回るぞ、グミ", "回っちゃったぞ"],
+    shy: ["てれるぞ、グミ…", "そんなに触るなよ…", "グミ、はずかしいぞ"],
+    stretch: ["鼻がのびるぞ！", "グミ、鼻はやめろよ", "びよーんってなるぞ"],
+    dizzy: ["ふらふらするぞ…", "グミ、押しすぎだぞ", "目がぐるぐるだぞ"],
+    pout: ["ぷんっ！いじわるだぞ、グミ", "むー、もう知らないぞ", "ちょっとおこったぞ"],
+    shrink: ["ひゃっ！つめたいぞ", "ひゃあ、びっくりだぞ", "グミ、ゆびが冷たいぞ"],
+    jelly: ["ぷるんぷるんだぞ", "おれはゼリーじゃないぞ", "からだがゆれるぞ、グミ"]
+  };
+  var rk = "giggle", rlast = "", rsaid = false;
+  function startReact(now) {
+    var cand = REACTS.filter(function (k) { return k !== rlast; });
+    var k = cand[randInt(0, cand.length - 1)]; rlast = k;
+    if (k === "sneeze") { startSneeze(now); return; }
+    mode = "react"; modeT0 = now; rk = k; rsaid = false;
+    say(pick(RSAY[k]), 2200);
+    if (k === "stretch" || k === "jelly") sndBoing(); else sndPop();
+    vibrate(20);
+  }
   function startSneeze(now) { mode = "sneeze"; modeT0 = now; spawned = false; sndSniff(); }
   function feed(id) {
     var now = performance.now();
@@ -1428,7 +1487,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     if (selId) { if (it && it.getAttribute("data-id") === selId) selectItem(null); else moveSel(e); return; }
     if (it) { selectItem(it.getAttribute("data-id")); return; }
     if (!isBase(mode)) return;
-    if (STATES[mode].angry) startAngry(now, STATES[mode].angry); else startSneeze(now);
+    if (STATES[mode].angry) startAngry(now, STATES[mode].angry); else startReact(now);
   });
 
   /* ---------- droplets ---------- */
@@ -1452,6 +1511,97 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       p.el.setAttribute("cx", p.x); p.el.setAttribute("cy", p.y); p.el.setAttribute("opacity", clamp(k * 1.6, 0, 1));
     }
   }
+
+
+  /* ---------- album / shoot ---------- */
+  var ALKEY = "tsuntsu-album-v1", AL = [], ALMAX = 60;
+  try { var _a = JSON.parse(localStorage.getItem(ALKEY) || "[]"); if (Array.isArray(_a)) AL = _a.filter(function (x) { return x && x.t; }); } catch (e) {}
+  function alSave() {
+    for (;;) {
+      try { localStorage.setItem(ALKEY, JSON.stringify(AL)); return true; } catch (e) { if (AL.length <= 1) return false; AL.pop(); }
+    }
+  }
+  function p2(n) { return (n < 10 ? "0" : "") + n; }
+  function dstr(ts) { var d = new Date(ts); return d.getFullYear() + "/" + p2(d.getMonth() + 1) + "/" + p2(d.getDate()) + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()); }
+  function renderAlbum() {
+    albumEl.innerHTML = "";
+    var h = document.createElement("div"); h.className = "alh"; h.textContent = "つんつのアルバム　" + AL.length + "枚"; albumEl.appendChild(h);
+    if (!AL.length) { var e = document.createElement("div"); e.className = "alempty"; e.innerHTML = "まだ写真がないぞ、グミ。<br>「さつえい」ボタンで撮ってくれ"; albumEl.appendChild(e); return; }
+    var g = document.createElement("div"); g.className = "alg";
+    AL.forEach(function (it, i) {
+      var b = document.createElement("button"); b.type = "button";
+      var im = document.createElement("img"); im.src = it.t; im.alt = dstr(it.d); im.loading = "lazy";
+      b.appendChild(im); b.addEventListener("click", function () { openViewer(i); }); g.appendChild(b);
+    });
+    albumEl.appendChild(g);
+  }
+  var viewerEl = $("viewer"), vIdx = -1, delArmed = false;
+  function openViewer(i) {
+    vIdx = i; delArmed = false; $("vdel").textContent = "けす";
+    $("vimg").src = AL[i].t; $("vdate").textContent = dstr(AL[i].d); viewerEl.hidden = false;
+  }
+  function closeViewer() { viewerEl.hidden = true; vIdx = -1; }
+  $("vclose").addEventListener("click", closeViewer);
+  viewerEl.addEventListener("click", function (e) { if (e.target === viewerEl) closeViewer(); });
+  $("vdel").addEventListener("click", function () {
+    if (!delArmed) { delArmed = true; $("vdel").textContent = "ほんとうにけす？"; return; }
+    if (vIdx >= 0) { AL.splice(vIdx, 1); alSave(); }
+    closeViewer(); renderAlbum();
+  });
+  $("vsave").addEventListener("click", function () {
+    if (vIdx < 0) return;
+    var it = AL[vIdx];
+    fetch(it.t).then(function (r) { return r.blob(); }).then(function (bl) {
+      var f = new File([bl], "tsuntsu-" + it.d + ".jpg", { type: "image/jpeg" });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) return navigator.share({ files: [f], title: "つんつ君" });
+      var a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = f.name; document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }).catch(function () {});
+  });
+  var shooting = false;
+  function sceneToJpeg(cb) {
+    var svg = document.querySelector("svg.scene"), cs = getComputedStyle(document.documentElement);
+    var vb = svg.getAttribute("viewBox").split(/\s+/).map(Number), W = 660, H = Math.round(W * vb[3] / vb[2]);
+    var clone = svg.cloneNode(true);
+    Array.prototype.forEach.call(clone.querySelectorAll(".sel"), function (n) { n.classList.remove("sel"); });
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg"); clone.setAttribute("width", W); clone.setAttribute("height", H);
+    clone.removeAttribute("style");
+    var css = ".ink{stroke:#1c1a17;stroke-linecap:round;stroke-linejoin:round}.ink:not([fill]){fill:none}" +
+      ".burst-text{font-family:'Dela Gothic One','Hiragino Sans','Yu Gothic',sans-serif;paint-order:stroke;stroke:" + cs.getPropertyValue("--bg").trim() + ";stroke-width:10px;stroke-linejoin:round;text-anchor:middle}" +
+      ".rain{stroke:#eaf4fb;stroke-width:3;stroke-linecap:round;stroke-dasharray:10 30;opacity:.85}";
+    var st = document.createElementNS("http://www.w3.org/2000/svg", "style"); st.textContent = css; clone.insertBefore(st, clone.firstChild);
+    var str = new XMLSerializer().serializeToString(clone).replace(/var\(\s*(--[\w-]+)\s*\)/g, function (m, n) { return cs.getPropertyValue(n).trim() || "#000"; });
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var cv = document.createElement("canvas"); cv.width = W; cv.height = H; var c = cv.getContext("2d");
+        c.fillStyle = cs.getPropertyValue("--bg").trim() || "#fdf0d2"; c.fillRect(0, 0, W, H);
+        c.drawImage(img, 0, 0, W, H);
+        var d = new Date(), t = d.getFullYear() + "/" + p2(d.getMonth() + 1) + "/" + p2(d.getDate()) + " " + p2(d.getHours()) + ":" + p2(d.getMinutes());
+        c.font = "700 20px 'Zen Maru Gothic','Hiragino Maru Gothic ProN','Yu Gothic',sans-serif"; c.textBaseline = "bottom";
+        c.lineWidth = 5; c.lineJoin = "round"; c.strokeStyle = "rgba(255,255,255,.9)"; c.fillStyle = "#4a3a22";
+        c.textAlign = "left"; c.strokeText("つんつ君", 14, H - 12); c.fillText("つんつ君", 14, H - 12);
+        c.textAlign = "right"; c.strokeText(t, W - 14, H - 12); c.fillText(t, W - 14, H - 12);
+        cb(cv.toDataURL("image/jpeg", .82));
+      } catch (e) { cb(null); }
+    };
+    img.onerror = function () { cb(null); };
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(str);
+  }
+  $("shoot").addEventListener("click", function () {
+    if (shooting) return; shooting = true;
+    var fl = $("flash"); fl.classList.remove("on"); void fl.offsetWidth; fl.classList.add("on");
+    sndShutter(); vibrate(30);
+    sceneToJpeg(function (url) {
+      shooting = false;
+      if (!url) { say("うまく撮れなかったぞ…", 2200); return; }
+      AL.unshift({ t: url, d: Date.now() });
+      if (AL.length > ALMAX) AL.length = ALMAX;
+      var ok = alSave();
+      say(pick(ok ? ["いい写真だな、グミ", "アルバムに入れたぞ", "おれ、かっこよく撮れたか？", "はい、チーズだぞ"] : ["写真がいっぱいで保存できないぞ"]), 2400);
+      if (!albumEl.hidden) renderAlbum();
+    });
+  });
 
   /* ---------- main loop ---------- */
   var DEF = {
@@ -1743,6 +1893,36 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     } else if (mode === "growl") {
       doBlink = true; T.alx = 44; T.aly = -100; T.ala = 40; T.arx = 44; T.ary = -100; T.ara = 40;
       T.mouth = .6; T.sy = 1 + .02 * Math.sin(me * 8); T.pdy = 4; T.L = REST - 8; sfx = "ぐぅ～";
+    } else if (mode === "react") {
+      speed = 24; var rt = me, rd = RDUR[rk] || 1.5, rk1 = Math.max(0, 1 - rt / rd);
+      if (rk === "giggle") {
+        doBlink = false; eye = "happy"; T.dy = -7 * Math.abs(Math.sin(rt * 16)); T.mouth = 1.3; T.sy = 1 + .03 * Math.sin(rt * 16); T.ala = -30; T.ara = -30; T.L = REST + 6; sfx = "えへへ";
+      } else if (rk === "hop") {
+        doBlink = false; var hj = rt < .55 ? Math.sin(Math.PI * rt / .55) : 0;
+        T.dy = -55 * hj; T.sy = 1 + .06 * hj; T.sx = 1 - .03 * hj; T.mouth = 1.5; T.ala = -60; T.ara = -60; T.L = REST + 30 * hj; sfx = hj > .3 ? "うわっ！" : "";
+      } else if (rk === "spin") {
+        doBlink = false; speed = 30; T.sx = Math.cos(rt * 11); T.dy = -12 * Math.sin(Math.PI * Math.min(1, rt / .95)); T.mouth = 1.2; T.L = REST + 10; sfx = rt < .9 ? "くるくる" : "";
+      } else if (rk === "shy") {
+        doBlink = false; eye = "squint"; T.alx = 50; T.aly = -150; T.ala = -165; T.als = 1.5; T.arx = 50; T.ary = -150; T.ara = -165; T.ars = 1.5;
+        T.rot = 4 * Math.sin(rt * 5) * rk1; T.sway = 3 * Math.sin(rt * 5); T.mouth = .6; T.L = REST - 8; sfx = "てれっ";
+      } else if (rk === "stretch") {
+        doBlink = false; eye = rt < 1.1 ? "squint" : "open"; T.mouth = 1.1; T.sy = 1 + .02 * Math.sin(rt * 9);
+        T.L = REST + 150 * Math.exp(-1.3 * rt) * Math.cos(rt * 8); T.sway = 5 * Math.sin(rt * 8) * rk1; sfx = rt < 1.2 ? "びよーん" : "";
+      } else if (rk === "dizzy") {
+        doBlink = false; T.pdx = 7 * Math.cos(rt * 9); T.pdy = 7 * Math.sin(rt * 9); T.rot = 5 * Math.sin(rt * 4) * rk1 + 1; T.sway = 8 * Math.sin(rt * 4) * rk1;
+        T.mouth = .8; T.L = REST + 6 * Math.sin(rt * 4); T.ala = 10 * Math.sin(rt * 4); T.ara = -10 * Math.sin(rt * 4); sfx = "ふらふら";
+      } else if (rk === "pout") {
+        doBlink = false; brow = "a"; T.alx = 44; T.aly = -100; T.ala = 40; T.arx = 44; T.ary = -100; T.ara = 40;
+        T.pdx = -7; T.rot = -3; T.mouth = .55; T.L = REST - 10; T.sy = 1 + .015 * Math.sin(rt * 6); sfx = "ぷんっ";
+      } else if (rk === "shrink") {
+        doBlink = false; var sp = rt < .18 ? rt / .18 : Math.max(0, 1 - (rt - .18) / .9);
+        eye = sp > .4 ? "squint" : "open"; T.sy = 1 - .18 * sp; T.sx = 1 + .1 * sp; T.L = REST - 70 * sp; T.mouth = 1 + .5 * sp;
+        T.ala = -50 * sp; T.ara = -50 * sp; T.rot = 1.5 * Math.sin(rt * 40) * sp; sfx = sp > .3 ? "ひゃっ" : "";
+      } else {
+        doBlink = false; var jd = Math.exp(-2.6 * rt) * Math.cos(rt * 17);
+        T.sy = 1 - .17 * jd; T.sx = 1 + .13 * jd; T.rot = 3 * jd; T.mouth = 1 + .3 * jd; T.L = REST + 70 * jd; T.sway = 4 * jd; sfx = rt < 1 ? "ぷるん" : "";
+      }
+      if (rt >= rd) { mode = "idle"; modeT0 = now; nextChange = now + rand(7000, 12000); blinkAt = now + 900; }
     } else if (mode === "angry") {
       speed = 26; var ea = (now - modeT0) / 1000, k = Math.max(0, 1 - ea / angryDur);
       brow = "a"; T.dy = 0; T.cx = cxBase + 3 * Math.sin(ea * 55) * k; T.mouth = 1.7; T.sy = 1 + .03 * Math.sin(ea * 28) * k; T.rot = 2 * Math.sin(ea * 40) * k;
