@@ -2942,7 +2942,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   /* ---------- つんつ君と勝負（じゃんけん毎日／ほか3種は気まぐれで1日1回） ---------- */
   var gPractice = /[?&]practice/.test(location.search), gameOn = false, gameLast = -1e9, gameEl = document.createElement("div");
   gameEl.className = "game"; gameEl.hidden = true; document.body.appendChild(gameEl);
-  var GAME_NAME = { jk: "じゃんけん", mem: "神経衰弱", dir: "あっち向いてホイ", fast: "早押し", baba: "ババ抜き", cups: "コップあて", nose: "鼻水のばし", mole: "もぐらたたき", jump: "ジャンプ競争", weigh: "重さくらべ", bingo: "ビンゴ", sugo: "すごろく", simon: "いろ当て", stopw: "ストップウォッチ", ball: "ボール当て", big: "おっきい数字" };
+  var GAME_NAME = { jk: "じゃんけん", mem: "神経衰弱", dir: "あっち向いてホイ", fast: "早押し", baba: "ババ抜き", cups: "コップあて", nose: "鼻水のばし", weigh: "重さくらべ", bingo: "ビンゴ", sugo: "すごろく", simon: "いろ当て", stopw: "ストップウォッチ", big: "おっきい数字" };
   function shuf(a) { for (var i = a.length - 1; i > 0; i--) { var j = randInt(0, i), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   var HANDS = ["✊", "✌️", "✋"], DIRS = [["↑", "うえ"], ["↓", "した"], ["←", "ひだり"], ["→", "みぎ"]];
   var gTimers = [];
@@ -3085,8 +3085,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     var types = ["onigiri", "curry", "pudding", "fish"], me, him;
     function pairOff(h) { var out = [], cnt = {}; h.forEach(function (c) { if (c === "joker") out.push(c); else cnt[c] = (cnt[c] || 0) + 1; }); Object.keys(cnt).forEach(function (k) { if (cnt[k] % 2) out.push(k); }); return out; }
     do {
-      var deck = []; types.forEach(function (t) { deck.push(t, t); }); deck.push("joker"); shuf(deck);
-      me = pairOff(deck.slice(0, 5)); him = pairOff(deck.slice(5));
+      var deck = []; types.forEach(function (t) { deck.push(t, t); }); shuf(deck); deck.pop(); deck.push("joker"); shuf(deck);
+      me = pairOff(deck.slice(0, 3)); him = pairOff(deck.slice(3, 6));
     } while (!me.length || !him.length);
     function face(c) { return c === "joker" ? "👻" : '<svg viewBox="0 0 64 64">' + ICONS[c] + '</svg>'; }
     function draw(sub, canPick) {
@@ -3165,59 +3165,6 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     }
     btn.addEventListener("pointerdown", function (e) { e.preventDefault(); if (done) return; held = true; t0 = performance.now(); loop(); });
     ["pointerup", "pointercancel", "pointerleave"].forEach(function (n) { btn.addEventListener(n, release); });
-  }
-  function molePlay() {
-    var me = 0, him = 0, n = 0, h = -1, active = false;
-    function draw(msg, mole, mark) {
-      var cells = "";
-      for (var i = 0; i < 9; i++) cells += '<button type="button" data-g="' + i + '" class="hole">' + (i === mole ? mark : "") + '</button>';
-      gHtml(GAME_NAME.mole, msg || "もぐらを タップ！つんつ君も たたくぞ", "", '<div class="holes">' + cells + '</div><div class="gs">グミ ' + me + ' － ' + him + ' つんつ' + (n >= 10 && me === him ? "（同点：さいごの1匹）" : "") + '</div>');
-      gOn(function (v) { if (active && +v === h) { active = false; me++; sndCoin(); draw("やった！", h, "💥"); nextRound(); } });
-    }
-    function nextRound() {
-      gT(function () {
-        if (n >= 10 && me !== him) { gFinish("mole", me > him, 20); return; }
-        n++; var prev = h; do { h = randInt(0, 8); } while (h === prev);
-        active = true; draw("", h, "🐹");
-        var tt = Math.random() < .9 ? rand(320, 760) : -1;
-        if (tt > 0) gT(function () { if (active) { active = false; him++; draw("つんつ君がたたいた！", h, "😏"); nextRound(); } }, tt);
-        gT(function () { if (active) { active = false; draw("にげた…", -1, ""); nextRound(); } }, 1150);
-      }, 450);
-    }
-    draw("じゅんび…", -1, ""); nextRound();
-  }
-
-  function jumpPlay() {
-    gHtml(GAME_NAME.jump, "タップでジャンプ！鼻水をよけて、先に10回よけたら勝ち", "", '<div class="lanes"><div class="lane" id="jlg"><span class="who">グミ</span><span class="pc" id="jpg">🧍</span></div><div class="lane" id="jlt"><span class="who">つんつ</span><span class="pc" id="jpt"><i class="tb">··</i></span></div></div><div class="gs" id="jsc">グミ 0 － 0 つんつ</div><div class="gr" style="margin-top:2px">' + gBtn("jump", "ジャンプ！", "big") + '</div>');
-    var laneG = gameEl.querySelector("#jlg"), laneT = gameEl.querySelector("#jlt"), pg = gameEl.querySelector("#jpg"), pt = gameEl.querySelector("#jpt"), sc = gameEl.querySelector("#jsc"), btn = gameEl.querySelector("button[data-g=jump]");
-    var g = 0, t = 0, nDrop = 0, airFrom = 0, airTo = 0, cool = 0, over = false, F = 900;
-    btn.style.padding = "14px 10px";
-    btn.addEventListener("pointerdown", function (e) {
-      e.preventDefault(); var now = performance.now(); if (over || now < cool) return;
-      cool = now + 800; airFrom = now + 60; airTo = now + 480; pg.classList.add("up"); sndPop(); gT(function () { pg.classList.remove("up"); }, 480);
-    });
-    function upd() { sc.textContent = "グミ " + g + " － " + t + " つんつ"; }
-    function spawn() {
-      if (over) return;
-      nDrop++;
-      var land = performance.now() + F, tOk = Math.random() < .72;
-      [laneG, laneT].forEach(function (ln) {
-        var d = document.createElement("span"); d.className = "drop"; d.textContent = "💧"; ln.appendChild(d);
-        requestAnimationFrame(function () { requestAnimationFrame(function () { d.style.transition = "top " + F + "ms linear"; d.style.top = "78px"; }); });
-        gT(function () { if (d.parentNode) d.parentNode.removeChild(d); }, F + 120);
-      });
-      if (tOk) gT(function () { pt.classList.add("up"); gT(function () { pt.classList.remove("up"); }, 480); }, F - 280);
-      gT(function () {
-        if (over) return;
-        var ok = land >= airFrom && land <= airTo;
-        if (ok) g++; else { laneG.classList.add("hit"); gT(function () { laneG.classList.remove("hit"); }, 250); }
-        if (tOk) t++; else { laneT.classList.add("hit"); gT(function () { laneT.classList.remove("hit"); }, 250); }
-        upd();
-        if (((g >= 10 || t >= 10) && g !== t) || nDrop >= 40) { over = true; gT(function () { gFinish("jump", g > t, 20); }, 700); }
-      }, F + 20);
-      gT(spawn, rand(1250, 1750));
-    }
-    gT(spawn, 900);
   }
   function weighPlay() {
     var items = [["onigiri", "おにぎり", 110], ["pudding", "プリン", 120], ["curry", "カレーパン", 150], ["fish", "焼き魚", 170]];
@@ -3347,25 +3294,6 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       gT(function () { gFinish("stopw", em < hm, 20); }, 1700);
     });
   }
-  function ballPlay() {
-    var g = 0, h = 0, n = 0, ph = rand(0, 6), w = 2.3, last = 0, raf = 0, over = false, startT = performance.now(), pt = .55;
-    gHtml(GAME_NAME.ball, "10球で あてた数を きそう。つんつ君は 同時に なげる", "", '<div class="rail"><span id="bzone" style="position:absolute;left:22%;right:22%;top:0;bottom:0;background:#ffe9b8;opacity:.7"></span><span class="tg" id="btg">··</span></div><div class="gs" id="bsc"></div><div class="gr">' + gBtn("throw", "なげる！", "big") + '</div>');
-    var tg = gameEl.querySelector("#btg"), sc = gameEl.querySelector("#bsc"), btn = gameEl.querySelector("button[data-g=throw]"), rail = gameEl.querySelector(".rail");
-    function px() { var t = (performance.now() - startT) / 1000, r = rail.clientWidth; return r * (.5 + .38 * Math.sin(ph + t * w)); }
-    function loop() { if (over) return; tg.style.left = px() + "px"; raf = requestAnimationFrame(loop); }
-    function upd(msg) { sc.textContent = (msg ? msg + "　" : "") + "グミ " + g + " － " + h + " つんつ（" + n + "球め）"; }
-    upd(""); loop();
-    btn.addEventListener("pointerdown", function (e) {
-      e.preventDefault(); if (over) return;
-      var hit = Math.abs(px() - rail.clientWidth / 2) < rail.clientWidth * .28;
-      var th = Math.random() < pt; n++; if (hit) g++; if (th) h++;
-      tg.classList.add("hit"); setTimeout(function () { tg.classList.remove("hit"); }, 180);
-      if (hit) sndCoin(); else sndPop();
-      upd(hit ? "ヒット！" : "ミス…");
-      if (n >= 10 && g !== h) { over = true; cancelAnimationFrame(raf); gT(function () { gFinish("ball", g > h, 20); }, 900); }
-      else if (n >= 10) upd("同点！ もう1球");
-    });
-  }
   function bigPlay() {
     var me = [0, 0, 0].map(function () { return randInt(1, 9); }), him = [0, 0, 0].map(function () { return randInt(1, 9); }), swapped = false;
     function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
@@ -3405,14 +3333,11 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     else if (kind === "baba") babaPlay();
     else if (kind === "cups") cupsPlay();
     else if (kind === "nose") nosePlay();
-    else if (kind === "mole") molePlay();
-    else if (kind === "jump") jumpPlay();
     else if (kind === "weigh") weighPlay();
     else if (kind === "bingo") bingoPlay();
     else if (kind === "sugo") sugoPlay();
     else if (kind === "simon") simonPlay();
     else if (kind === "stopw") stopwPlay();
-    else if (kind === "ball") ballPlay();
     else if (kind === "big") bigPlay();
     else memPlay();
   }
@@ -3434,7 +3359,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     var wait = function (k) { return SV[k + "LaterDay"] === t && Date.now() < (SV[k + "Later"] || 0); };
     if (SV.jkDay !== t && !wait("jk")) { invite("jk"); return; }
     if (SV.gmDay !== t && !wait("gm")) {
-      if (SV.gmKindDay !== t) { SV.gmKind = ["mem", "dir", "fast", "baba", "cups", "nose", "mole", "jump", "weigh", "bingo", "sugo", "simon", "stopw", "ball", "big"][randInt(0, 14)]; SV.gmKindDay = t; save(); }
+      if (SV.gmKindDay !== t || !GAME_NAME[SV.gmKind]) { SV.gmKind = ["mem", "dir", "fast", "baba", "cups", "nose", "weigh", "bingo", "sugo", "simon", "stopw", "big"][randInt(0, 11)]; SV.gmKindDay = t; save(); }
       invite(SV.gmKind);
     }
   }, 7000);
