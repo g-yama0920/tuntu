@@ -1174,9 +1174,20 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     munch: [0, 1, 2, 3].map(function (i) { return T_(i * .28, .1, 260, 140, .18, "triangle"); }),
     blow: [N_(0, .4, 600, 300, 1.2, .5, .02), T_(0, .35, 210, 110, .22, "sawtooth")],
     pop: [T_(0, .12, 500, 900, .12, "triangle")],
+    fanfare: (function () {
+      var e = [N_(0, .14, 3200, 700, .8, .9, .003), T_(0, .12, 220, 80, .35, "triangle"), N_(.02, .5, 7000, 5000, .6, .35, .01)];
+      function chord(t, d, fs, v) { fs.forEach(function (f) { e.push(T_(t, d, f, f, v, "sawtooth")); e.push(T_(t, d, f * 2, f * 2, v * .35, "square")); }); }
+      [.2, .36, .52].forEach(function (t) { chord(t, .14, [523, 659], .1); });
+      chord(.68, .5, [659, 784, 1047], .11);
+      [523, 659, 784, 1047, 1319].forEach(function (f, i) { e.push(T_(1.3 + i * .11, .14, f, f, .12, "square")); e.push(T_(1.3 + i * .11, .14, f * 2, f * 2, .05, "sine")); });
+      chord(1.9, 1.2, [523, 659, 784, 1047], .1);
+      e.push(N_(1.9, 1.4, 7500, 6000, .5, .45, .01));
+      [2400, 3100, 2800, 3700, 3300, 4200].forEach(function (f, i) { e.push(T_(2.1 + i * .13, .22, f, f * 1.2, .05, "sine")); });
+      return e;
+    })(),
     shutter: [N_(0, .05, 3600, 2200, .9, .9, .004), T_(0, .04, 1900, 1500, .08, "square"), N_(.09, .08, 2600, 1200, .9, .9, .004), T_(.09, .05, 1300, 1000, .08, "square")]
   };
-  var LEVEL = { sniff: .6, sneeze: .9, boing: .6, coin: .55, grr: .7, munch: .6, blow: .8, pop: .55, shutter: .7 };
+  var LEVEL = { sniff: .6, sneeze: .9, boing: .6, coin: .55, grr: .7, munch: .6, blow: .8, pop: .55, shutter: .7, fanfare: .85 };
   function getUri(name) {
     if (URIS[name]) return URIS[name];
     var f = synth(SPECS[name]), m = 0, i;
@@ -1780,7 +1791,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   mk({ id: "m_muscle", kind: "free", pose: "muscle", a: {}, dur: 5, held: null, worn: null, fx: null, say: null, target: null });
   function selfBdayOn(d) { return d.getMonth() === 9 && d.getDate() === 8 && d.getFullYear() >= 2027; }
   HELD.cake = '<rect x="-30" y="-6" width="60" height="30" rx="6" fill="#f8e3c6" class="ink" stroke-width="3.5"/><path d="M-30 -2 Q-15 -14 0 -2 Q15 -14 30 -2" fill="#f08aa8" class="ink" stroke-width="3"/><rect x="-3" y="-28" width="6" height="22" fill="#7fb6e8" class="ink" stroke-width="2.5"/><ellipse cx="0" cy="-34" rx="5" ry="8" fill="#ffb347"/>';
-  mk({ id: "t_selfbday", kind: "time", win: [0, 0, 24, 0], ok: selfBdayOn, pose: "proud", a: { sfx: "ふふん" }, dur: 10, held: H(HELD.cake, "R", -4, -12, 0), worn: null, fx: "sparkle", say: ["今日はつんつの誕生日だぞ！グミ、祝ってくれ", "ケーキだ。ろうそく、ふーするぞ"], target: null });
+  mk({ id: "t_selfbday", kind: "time", win: [0, 0, 24, 0], ok: selfBdayOn, pose: "proud", onStart: function () { var y = new Date().getFullYear(); if (SV.selfBdayGift !== y) { SV.selfBdayGift = y; SV.coins += 100; save(); showCoins(); setTimeout(function () { coinPop(100, "🎂"); sndCoin(); }, 2500); } }, a: { sfx: "ふふん" }, dur: 10, held: H(HELD.cake, "R", -4, -12, 0), worn: null, fx: "sparkle", say: ["今日はつんつの誕生日だぞ！グミ、祝ってくれ", "ケーキだ。ろうそく、ふーするぞ"], target: null });
   var KUSU_AT = [7, 30, 100];
   function kusuNext() { var m = 0; KUSU_AT.forEach(function (k) { if (SV.openDays >= k && SV.kusu < k) m = k; }); return m; }
   mk({ id: "m_kusu", kind: "time", win: [0, 0, 24, 0], ok: function () { return kusuNext() > 0; }, pose: "kusu", a: {}, dur: 9, held: null, worn: null, fx: null, say: [function () { return "グミ、つんつを開いて" + SV.kusu + "日目だぞ！くす玉を割るぞ"; }, "おめでとう！ありがとな、グミ"], target: null, onStart: function () { SV.kusu = kusuNext() || SV.kusu; save(); kusuDone = false; } });
@@ -1885,7 +1896,12 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     kusu: function (ct, T, R) {
       kusuT = ct; R.eye = ct > 1.4 ? "happy" : "open"; T.alx = 60; T.aly = -120; T.arx = 60; T.ary = -120;
       var c = Math.abs(Math.sin(ct * 7)); if (ct > 1.4) { T.ala = 30 - 50 * c; T.ara = 30 - 50 * c; T.dy = -5 * c; T.mouth = 1.3; R.sfx = c > .8 ? "パチパチ" : ""; } else { T.ala = -150; T.ara = -150; T.mouth = 1; T.pdy = -4; R.sfx = "ぐいっ"; }
-      if (ct > 1.4 && !kusuDone) { kusuDone = true; spawnConf(90); sndCoin(); vibrate(40); }
+      if (ct > 1.4 && !kusuDone) {
+        kusuDone = true; spawnConf(90); vibrate(40);
+        playSnd("fanfare"); setTimeout(function () { spawnConf(60); }, 900);
+        if (EVC && EVC.id === "m_gold2") { if (!SV.gold2Gift) { SV.gold2Gift = 1; SV.coins += 150; save(); showCoins(); setTimeout(function () { coinPop(150, "ワンフレ祝い"); sndCoin(); }, 1400); } }
+        else { SV.coins += 100; save(); showCoins(); setTimeout(function () { coinPop(100, "おいわい"); sndCoin(); }, 1400); }
+      }
     },
     yawn: function (ct, T, R) { var y = Math.sin(Math.PI * clamp(ct / 3.4, 0, 1)); R.eye = y > .3 ? "squint" : "open"; T.mouth = 1 + .9 * y; T.ala = -120 * y; T.ara = -120 * y; T.sy = 1 + .04 * y; T.L = REST + 20 * y; R.sfx = y > .5 ? "ふあぁ…" : ""; },
     brush: function (ct, T, R) { T.arx = 44; T.ary = -118; T.ara = -150 + 8 * Math.sin(ct * 18); T.ars = 1.4; T.alx = 108; T.ala = 6; T.mouth = .9 + .3 * Math.abs(Math.sin(ct * 18)); T.rot = 2 * Math.sin(ct * 9); T.L = REST - 6; R.sfx = "しゃかしゃか"; },
@@ -2831,7 +2847,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   (function intro() {
     var now0 = new Date(), bd = isBirthday(now0), q;
     if (bd) {
-      var gift = { t: "プレゼントだ。つんつ 100つ。ささやかだけどな", fn: function () { SV.coins += 100; SV.bdayGift = now0.getFullYear(); save(); showCoins(); coinPop(100, "🎂"); sndCoin(); vibrate(30); refreshPanels(); } };
+      var gift = { t: "プレゼントだ。つんつ 930つ。9・3・0で、グミだぞ", fn: function () { SV.coins += 930; SV.bdayGift = now0.getFullYear(); save(); showCoins(); coinPop(930, "🎂"); sndCoin(); vibrate(30); refreshPanels(); } };
       if (openCtx.sameDay) q = [pick(L.birthday)];
       else {
         q = (openCtx.first ? [pick(L.first)] : []).concat(["グミ、誕生日か。おめでとな", "今日は 部屋を かざったぞ。…おれなりに な"]);
