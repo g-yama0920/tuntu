@@ -496,7 +496,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   ];
 
   /* ---------- save ---------- */
-  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0 };
+  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0, setli: 0 };
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) {
@@ -2084,6 +2084,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     first: ["…グミ、か。…まあいい、ここはおれの部屋だ", "お、グミか。…鼻水は見るなよ"],
     first2: "グミ、ごはんをくれるなら歓迎するぞ。つついてもいいが、やさしくな",
     gen: [
+      "グミは歌が上手いからなぁ", "グミ、今日は配信か？無理せず頑張れよ", "グミ、なそは元気か？あいつはとにかくビッグだ", "グミ、たまには、そいちゃんに甘えろよ", "グミ、そいちゃんにOP送ってやれ", "グミ、セブンのわかめラーメンがうめぇんだ", "グミ、背中かいてくれ。かいかいかいかい", "俺の夢はこの部屋をゴージャスにする事だ",
       "グミ、今日も風呂入るんだぞ", "グミ、ちゃんと飯食えよ", "グミ、今日もパーマ似合ってるぞ", "グミ、水ちゃんと飲んでるか", "グミ、無理しすぎるなよ",
       "グミ、歯みがきは忘れるなよ", "グミ、スマホばっかり見てると目が疲れるぞ", "グミ、たまには遠くを見ろよ", "グミ、姿勢が悪くなってるぞ。背すじ伸ばせ", "グミ、笑ってるほうが似合うぞ",
       "グミ、グミの新作買ったか？", "グミ、新しいグミ見つけたら教えろよ", "グミ、グミばっか食ってないで野菜も食えよ", "グミ、グミは一日ひと袋までだぞ", "グミ、固いグミと柔らかいグミ、どっち派だ？",
@@ -2256,9 +2257,13 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   }
   function bandLine() { return chatLine(); }
 
+  // 2026/10/8 限定：21時以降に開いたとき1回だけ
+  function setliOk() { var d = new Date(); return !SV.setli && d.getFullYear() === 2026 && d.getMonth() === 9 && d.getDate() === 8 && d.getHours() >= 21; }
+  var SETLI = "ぐみ、シュワシュワセトリ良かったぞ";
   function buildGreeting(ctx) {
     var d = new Date(), g = growthOf(ctx.openDays), i;
     if (ctx.first) return [pick(L.first), L.first2];
+    if (setliOk()) { SV.setli = 1; save(); return [SETLI]; }
     if (!ctx.sameDay) {
       if (isBirthday(d)) return [pick(L.birthday)];
       var m = null;
@@ -2328,6 +2333,9 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     setTimeout(next, 700);
   })();
 
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && setliOk() && isBase(mode)) { SV.setli = 1; save(); say(SETLI, 4200); nextTalk = performance.now() + 20000; }
+  });
   applyEnv(); envAt = performance.now() + 15000;
   refreshPanels();
   requestAnimationFrame(frame);
