@@ -303,6 +303,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
                 <circle cx="2" cy="-436" r="11" fill="#f2c94c" class="ink" stroke-width="3.5"/>
               </g>
 
+              <g id="evWorn" opacity="0" pointer-events="none"></g>
+
               <!-- surprise ticks -->
               <g id="surG" class="ink" stroke-width="4" opacity="0">
                 <path d="M-122 -322 L-106 -310 M-130 -296 L-110 -292 M122 -322 L106 -310 M130 -296 L110 -292"/>
@@ -348,6 +350,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
                 </g>
                 <g id="p_ball" opacity="0"><g id="ballI"><circle r="22" fill="#e0664f" class="ink" stroke-width="4"/><path d="M-22 0H22M0 -22V22" stroke="#fff" stroke-width="3"/></g></g>
                 <g id="p_gummy" opacity="0"><g id="gmI" fill="#e8573a"><ellipse cx="0" cy="7" rx="12" ry="15" fill="inherit" fill-opacity=".9" class="ink" stroke-width="3"/><circle cx="0" cy="-12" r="10" fill="inherit" fill-opacity=".9" class="ink" stroke-width="3"/><circle cx="-8" cy="-20" r="4.5" fill="inherit" class="ink" stroke-width="2.5"/><circle cx="8" cy="-20" r="4.5" fill="inherit" class="ink" stroke-width="2.5"/><path d="M-6 -2 Q-6 8 -4 12" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/></g></g>
+                <g id="evHeld" opacity="0" pointer-events="none"></g>
               </g>
             </g>
           </g>
@@ -363,6 +366,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
         <g id="foodG" opacity="0"></g>
         <g id="tearG" pointer-events="none" opacity="0"></g>
         <g id="confG" pointer-events="none"></g>
+        <g id="evFx" pointer-events="none"></g>
         <text id="burst" class="burst-text" x="640" y="500" font-size="78" opacity="0" style="fill:var(--burst)">ハクション！</text>
         <text id="sfx" class="burst-text" x="0" y="0" font-size="54" opacity="0" style="fill:var(--burst);stroke-width:11px"></text>
         <text id="pre" class="burst-text" x="800" y="560" font-size="46" opacity="0" style="fill:var(--burst);stroke-width:8px">は…は…</text>
@@ -497,7 +501,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   ];
 
   /* ---------- save ---------- */
-  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0, setli: 0, tokyo: -1 };
+  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0, setli: 0, tokyo: -1, evDone: {} };
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) {
@@ -508,6 +512,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
         if (!SV.eaten || typeof SV.eaten !== "object") SV.eaten = {};
         if (!SV.pos || typeof SV.pos !== "object") SV.pos = {};
         if (!SV.ever || typeof SV.ever !== "object") SV.ever = {};
+        if (!SV.evDone || typeof SV.evDone !== "object") SV.evDone = {};
       }
     }
   } catch (e) {}
@@ -1610,6 +1615,240 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     });
   });
 
+  /* ---------- 時間帯・季節・家具の限定動作（各1日1回） ---------- */
+  var EVL = [], EVMAP = {}, EVC = null, evPhase = 0, evX = 0, evSaid = 0, evLastEnd = -1e9;
+  var evHeldEl = $("evHeld"), evWornEl = $("evWorn"), evFxEl = $("evFx"), fxEls = [];
+  (function () { for (var i = 0; i < 16; i++) { var e = document.createElementNS(NS, "ellipse"); e.setAttribute("opacity", 0); evFxEl.appendChild(e); fxEls.push(e); } })();
+  function ico(id, s) { return '<g transform="scale(' + (s || .85) + ') translate(-32 -32)">' + ICONS[id] + '</g>'; }
+  var HELD = {
+    cup: '<rect x="-14" y="-14" width="28" height="28" rx="5" fill="#f4efe0" class="ink" stroke-width="3.5"/><path d="M14 -6 q13 2 0 14" fill="none" class="ink" stroke-width="3.5"/><path d="M-7 -20 q4 -8 0 -14 M3 -20 q4 -8 0 -14" stroke="#cfcabd" stroke-width="3" fill="none" stroke-linecap="round"/>',
+    rice: '<path d="M-26 -6 H26 Q24 24 0 26 Q-24 24 -26 -6Z" fill="#f4efe0" class="ink" stroke-width="3.5"/><path d="M-21 -6 Q0 -28 21 -6Z" fill="#fff" class="ink" stroke-width="3"/><path d="M-4 -40 L14 -2 M4 -42 L22 -4" class="ink" stroke-width="3.5"/>',
+    soba: '<path d="M-26 -6 H26 Q24 24 0 26 Q-24 24 -26 -6Z" fill="#5a4a6a" class="ink" stroke-width="3.5"/><path d="M-20 -6 Q-10 -18 0 -6 Q10 -18 20 -6" fill="none" stroke="#d9b27a" stroke-width="5" stroke-linecap="round"/><path d="M-4 -40 L14 -2 M4 -42 L22 -4" class="ink" stroke-width="3.5"/>',
+    pencil: '<path d="M-6 -30 L6 -30 L6 14 L0 25 L-6 14Z" fill="#f2c94c" class="ink" stroke-width="3"/><path d="M-6 -30 H6 V-22 H-6Z" fill="#e08a9a" class="ink" stroke-width="3"/>',
+    dango: '<path d="M0 -38 V32" class="ink" stroke-width="3.5"/><circle cx="0" cy="-22" r="11" fill="#f6b8cc" class="ink" stroke-width="3"/><circle cx="0" cy="-1" r="11" fill="#fff" class="ink" stroke-width="3"/><circle cx="0" cy="20" r="11" fill="#a8d08a" class="ink" stroke-width="3"/>',
+    suika: '<path d="M-30 -8 H30 A30 30 0 0 1 -30 -8Z" fill="#e8484f" class="ink" stroke-width="3.5"/><path d="M-26 0 A30 28 0 0 0 26 0" fill="none" stroke="#4f9a3c" stroke-width="6"/><circle cx="-10" cy="4" r="2.5" fill="#1c1a17"/><circle cx="4" cy="8" r="2.5" fill="#1c1a17"/><circle cx="14" cy="3" r="2.5" fill="#1c1a17"/>',
+    tanzaku: '<rect x="-9" y="-34" width="18" height="60" fill="#f2d65a" class="ink" stroke-width="3"/><path d="M-4 -22 H4 M-4 -10 H4 M-4 2 H4" stroke="#1c1a17" stroke-width="2"/>',
+    tissue: '<path d="M-17 -14 L14 -19 L19 14 L-12 19Z" fill="#fff" class="ink" stroke-width="3.5"/>',
+    leaf: '<path d="M-6 6 q14 -26 30 -4 q-14 16 -30 4Z" fill="#e07a2f" class="ink" stroke-width="3"/><path d="M-16 -4 q10 -22 24 -6 q-12 12 -24 6Z" fill="#c8402a" class="ink" stroke-width="3"/>',
+    acorn: '<ellipse cx="0" cy="4" rx="10" ry="13" fill="#b07a44" class="ink" stroke-width="3"/><path d="M-12 -6 Q0 -22 12 -6Z" fill="#7a5230" class="ink" stroke-width="3"/>',
+    ball: '<circle r="18" fill="#f08aa8" class="ink" stroke-width="3.5"/><path d="M0 18 q-4 12 4 20" fill="none" class="ink" stroke-width="2.5"/>'
+  };
+  var WORN = {
+    towel: '<path d="M-46 -316 Q2 -374 50 -316 Q44 -302 2 -304 Q-40 -302 -46 -316Z" fill="#fff" class="ink" stroke-width="4"/><path d="M-28 -332 Q2 -352 34 -332" stroke="#cfd6dc" stroke-width="4" fill="none"/>',
+    cap: '<path d="M-44 -322 Q-10 -404 62 -360 Q68 -346 54 -342 Q24 -372 -4 -316Z" fill="#7fa8e0" class="ink" stroke-width="4"/><circle cx="62" cy="-352" r="11" fill="#fff" class="ink" stroke-width="3.5"/>',
+    kabuto: '<path d="M-46 -316 Q2 -396 50 -316Z" fill="#c8483a" class="ink" stroke-width="4"/><path d="M-6 -362 Q2 -400 12 -362" fill="none" stroke="#f2c94c" stroke-width="7" stroke-linecap="round"/><path d="M-46 -316 H50" class="ink" stroke-width="5"/>',
+    ghost: '<path d="M-62 -246 Q-76 -384 2 -392 Q80 -384 66 -246 L54 -254 L40 -242 L26 -254 L12 -242 L-2 -254 L-16 -242 L-30 -254 L-46 -242Z" fill="#fff" fill-opacity=".95" class="ink" stroke-width="4"/><ellipse cx="-33" cy="-268" rx="10" ry="13" fill="#1c1a17"/><ellipse cx="33" cy="-268" rx="10" ry="13" fill="#1c1a17"/>',
+    santa: '<path d="M-42 -320 Q-30 -402 42 -382 Q64 -374 68 -350 Q42 -372 32 -320Z" fill="#d9373a" class="ink" stroke-width="4"/><rect x="-48" y="-330" width="98" height="20" rx="10" fill="#fff" class="ink" stroke-width="4"/><circle cx="66" cy="-350" r="11" fill="#fff" class="ink" stroke-width="3.5"/>'
+  };
+  function H(svg, hand, ox, oy, r, s) { return { svg: svg, hand: hand || "R", ox: ox || 0, oy: oy || 0, r: r || 0, s: s || 1 }; }
+  var HM = H(null, "R", -30, -10, -30);          // 口もとで持つ
+  function mk(o) { EVL.push(o); EVMAP[o.id] = o; }
+  // 時間帯：win=[開始h,開始m,終了h,終了m]
+  [
+    ["t_radio", [6, 30, 7, 0], "calis", {}, 9, null, null, null, "window0", ["グミ、朝の体操だぞ。いち、にー、さん"]],
+    ["t_breakfast", [7, 30, 8, 0], "sitwait", {}, 9, H(HELD.rice, "R", -26, -6, -20), null, null, null, ["グミ、朝ごはんはまだか", "おはしを持って待ってるぞ"]],
+    ["t_lunch", [12, 0, 12, 30], "eat", {}, 9, H(ico("onigiri"), "R", -34, -12, -30), null, null, null, ["グミ、昼飯の時間だぞ", "おにぎりうめぇ"]],
+    ["t_snack", [15, 0, 15, 30], "eat", { sfx: "ぱくぱく" }, 9, H(ico("pudding"), "R", -34, -12, -30), null, null, null, ["グミ、おやつの時間だぞ", "プリン、うまいなぁ"]],
+    ["t_sunset", [18, 0, 18, 30], "gaze", { sfx: "ほぉ…" }, 9, null, null, null, "window", ["グミ、夕焼けがきれいだぞ"]],
+    ["t_bath", [20, 0, 20, 30], "sit", { pdx: 0, sfx: "ふぅ～" }, 9, null, WORN.towel, "steam", null, ["グミ、今日もお風呂入れよ", "ほかほかだぞ"]],
+    ["t_ready", [22, 0, 22, 30], "doze", {}, 9, null, WORN.cap, null, null, ["グミ、そろそろ寝る時間だぞ"]],
+    ["t_late", [0, 0, 0, 10], "doze", { wake: 1 }, 9, null, null, null, null, ["グミ、まだ起きてるのか。早く寝ろよ"]],
+    ["t_early", [5, 0, 5, 30], "stretch", {}, 9, null, null, null, "window0", ["グミ、早起きだな。えらいぞ"]],
+    ["t_work", [9, 0, 9, 30], "write", {}, 9, H(HELD.pencil, "R", -6, -22, 10), null, null, null, ["グミ、今日もがんばれよ", "おれもがんばるぞ。…ねむい"]],
+    ["t_tea", [10, 0, 10, 30], "sip", {}, 9, H(HELD.cup, "R", -32, -10, -20), null, null, null, ["グミ、ちょっと休憩しろよ", "お茶がうまいぞ"]],
+    ["t_nap", [13, 0, 13, 30], "lie", {}, 10, null, null, null, null, ["グミ、眠くなる時間だな…"]],
+    ["t_smell", [17, 0, 17, 30], "sniff", {}, 8, null, null, "steam", null, ["グミ、いいにおいがするぞ"]],
+    ["t_stretch", [21, 30, 22, 0], "stretch", {}, 9, null, null, null, null, ["グミ、今日もおつかれさんだぞ"]],
+    ["t_star", [23, 0, 23, 30], "gaze", { pdy: -4, sfx: "きらきら" }, 9, null, null, "stars", "window", ["グミ、今日もいい日だったか？"]],
+    ["t_ghost", [3, 0, 3, 30], "scared", {}, 8, null, null, null, null, ["グミ、こわいから起きててくれ"]]
+  ].forEach(function (r) { mk({ id: r[0], kind: "time", win: r[1], pose: r[2], a: r[3], dur: r[4], held: r[5], worn: r[6], fx: r[7], target: r[8], say: r[9] }); });
+  // 季節：from/to=[月,日]、hours=[開始h,終了h]
+  [
+    ["s_hanami", [3, 20], [4, 10], null, "eat", { sfx: "もぐもぐ" }, H(HELD.dango, "R", -30, -14, -30), null, "petals", ["グミ、花見したいな", "だんごうめぇ"]],
+    ["s_new", [4, 1], [4, 15], null, "bow", {}, null, null, null, ["グミ、新しい季節もよろしくな"]],
+    ["s_kabuto", [5, 1], [5, 5], null, "proud", { sfx: "えいっ！" }, null, WORN.kabuto, null, ["グミ、強くなったぞ", "こどもの日だぞ"]],
+    ["s_rain", [6, 1], [7, 10], null, "gaze", { sfx: "ざー…" }, null, null, null, ["グミ、傘は持ったか", "雨つぶがおちてくぞ"], "window"],
+    ["s_tanabata", [7, 1], [7, 7], null, "gaze", { pdy: -4, sfx: "ねがい…" }, H(HELD.tanzaku, "R", -10, -10, 10), null, "stars", ["グミ、願いごとは決めたか"], "window"],
+    ["s_suika", [7, 10], [8, 31], null, "eat", { sfx: "シャクシャク" }, H(HELD.suika, "R", -34, -10, -20), null, null, ["グミ、水分とれよ", "スイカうまいぞ。たねをぷっ"]],
+    ["s_hanabi", [8, 1], [8, 31], [19, 21], "clap", {}, null, null, "fireworks", ["グミ、ドーンときたぞ", "きれいだなぁ"], "window"],
+    ["s_tsukimi", [9, 10], [10, 10], [18, 24], "eat", { sfx: "もぐもぐ" }, H(HELD.dango, "R", -30, -14, -30), null, null, ["グミ、月がきれいだぞ", "だんごもうまいぞ"]],
+    ["s_ghost", [10, 15], [10, 31], null, "wave", { sfx: "うらめしやー" }, null, WORN.ghost, null, ["トリックオアトリート！", "グミ、お菓子くれよ"]],
+    ["s_leaves", [11, 1], [11, 30], null, "throw", { sfx: "ぱぁっ" }, H(HELD.leaf, "R", 0, -10, 0), null, "leaves", ["グミ、秋だな", "落ち葉をぱぁっだぞ"]],
+    ["s_xmas", [12, 10], [12, 25], null, "gaze", { pdy: -3, pdx: 6, sfx: "そわそわ" }, null, WORN.santa, "snow", ["グミ、サンタは来たか", "プレゼントはどこだ"]],
+    ["s_newyear", [12, 31], [1, 3], null, "eat", { sfx: "ずるずる", bow: 1 }, H(HELD.soba, "R", -30, -10, -20), null, null, [function (d) { return d.getMonth() === 11 ? "グミ、年越しそばうめぇ。良いお年を" : "グミ、あけましておめでとう。今年もよろしくな"; }]]
+  ].forEach(function (r) { mk({ id: r[0], kind: "season", from: r[1], to: r[2], hours: r[3], pose: r[4], a: r[5], dur: 9, held: r[6], worn: r[7], fx: r[8], say: r[9], target: r[10] || null }); });
+  // 家具：req=置いてある家具のid
+  [
+    ["cushion", "sit", { sfx: "ふかふか" }, null, null, null, ["ふかふかだぞ、グミ"]],
+    ["mirror", "primp", {}, null, null, null, ["グミ、今日もおれ、かっこいいか？"]],
+    ["rug", "lie", { happy: 1, sfx: "ごろごろ" }, null, null, null, ["ラグの上は気持ちいいぞ、グミ"]],
+    ["frame", "gaze", { pdy: -4, rot: -1 }, null, null, null, ["グミ、この額縁、いいだろ"]],
+    ["curtain", "peek", {}, null, null, null, ["カーテンあけるぞ。…まぶしいな"]],
+    ["clock", "gaze", { pdy: -4 }, null, null, null, [function (d) { return "グミ、いま" + d.getHours() + "時" + d.getMinutes() + "分だぞ"; }]],
+    ["plant", "pet", {}, null, null, null, ["グミ、観葉植物がぐんぐん伸びてるぞ"]],
+    ["chabudai", "sip", {}, H(HELD.cup, "R", -32, -10, -20), null, null, ["グミ、ちゃぶ台でお茶だぞ。ずずず"]],
+    ["sillpot", "sniff", {}, null, null, null, ["窓辺の小鉢、いい匂いだぞ"]],
+    ["shelf", "read", {}, null, null, null, ["グミ、本棚から一冊とったぞ。…むずかしいな"]],
+    ["lamp", "handsup", { sfx: "ぽっ" }, null, null, "sparkle", ["グミ、あかるいぞ"]],
+    ["telescope", "gaze", { pdx: -12, pdy: -3, sfx: "おお…" }, null, null, null, ["グミ、望遠鏡で星をみてるぞ"]],
+    ["wallpaper", "proud", {}, null, null, null, ["グミ、この壁紙、気に入ってるんだ"]],
+    ["chandelier", "handsup", { sfx: "きらきら" }, null, null, "sparkle", ["グミ、シャンデリアがきらきらだぞ"]],
+    ["stool", "sit", {}, null, null, null, ["グミ、丸いすは座りごこちがいいぞ"]],
+    ["fan", "shout", {}, null, null, null, ["あ゛～～～。グミ、声がふるえるぞ"]],
+    ["bin", "throw", { sfx: "えいっ！" }, H(HELD.tissue, "R", 0, -10, 0), null, null, ["グミ、ごみはごみ箱だぞ。えいっ"]],
+    ["tissuebox", "blow", {}, H(HELD.tissue, "R", -30, -18, 8), null, null, ["グミ、ティッシュありがとな。ずびー"]],
+    ["d_bear", "hug", { sfx: "ぎゅー" }, null, null, null, ["グミ、くまはあったかいな。ぎゅー"]],
+    ["d_fish", "gaze", { pdx: -6, pdy: 5, sfx: "ぷくぷく" }, null, null, null, ["グミ、金魚がぷくぷくしてるぞ"]],
+    ["d_globe", "spin", {}, null, null, null, ["グミ、世界は広いぞ。くるくる"]],
+    ["d_cactus", "poke", { sfx2: "いてっ！" }, null, null, null, ["いてっ！グミ、サボテンはさわるなよ"]],
+    ["d_calendar", "gaze", { pdy: -4 }, null, null, null, [function (d) { return "グミ、今日は" + (d.getMonth() + 1) + "月" + d.getDate() + "日だぞ"; }]],
+    ["d_poster", "gaze", { pdy: -2, rot: -1 }, null, null, null, ["グミ、この絵、いいだろ"]],
+    ["d_blocks", "block", {}, null, null, null, ["グミ、つみきをつんだぞ。…ガシャーン"]],
+    ["d_radio", "dance", {}, null, null, null, ["グミ、ラジオからいい曲が流れてるぞ♪"]],
+    ["d_neko", "wave", { sfx: "おいでおいで" }, null, null, null, ["グミ、ねこといっしょに手まねきだぞ"]],
+    ["d_umbrella", "gaze", { pdy: 2 }, null, null, null, ["グミ、傘は持ったか？"]],
+    ["d_hourglass", "gaze", { pdy: 3, sfx: "さらさら" }, null, null, null, ["グミ、砂がさらさら落ちてくぞ"]],
+    ["d_balloon", "poke", { sfx2: "ぽよん！" }, null, null, null, ["グミ、ふうせんをつついたぞ。ぽよん"]],
+    ["s_setsubun", "throw", { sfx: "鬼は外！" }, null, null, "beans", ["鬼は外！福は内！グミ、豆まきだぞ"]],
+    ["s_hina", "gaze", { pdy: -2 }, null, null, null, ["グミ、ひな人形、きれいだな"]],
+    ["s_sakura", "gaze", { pdy: -3 }, null, null, "petals", ["グミ、桜の枝がきれいだぞ"]],
+    ["s_koinobori", "wave", { sfx: "ひらひら" }, null, null, null, ["グミ、こいのぼりみたいに元気だぞ"]],
+    ["s_carnation", "sniff", {}, null, null, null, ["グミ、母さんにありがとうだぞ"]],
+    ["s_ajisai", "gaze", { pdy: 2 }, null, null, null, ["グミ、あじさい、いい色だな"]],
+    ["s_tanabata", "gaze", { pdy: -4 }, null, null, "stars", ["グミ、笹に願いごとかいたぞ"]],
+    ["s_furin", "gaze", { pdy: -3, sfx: "チリン…" }, null, null, null, ["グミ、風鈴の音ですずしいぞ"]],
+    ["s_himawari", "proud", { sfx: "にっこり" }, null, null, null, ["グミ、ひまわりみたいに元気だぞ"]],
+    ["s_tsukimi", "eat", { sfx: "もぐもぐ" }, H(HELD.dango, "R", -30, -14, -30), null, null, ["グミ、お月見だんご、いただくぞ"]],
+    ["s_halloween", "scared", {}, null, null, null, ["グミ、かぼちゃがこっち見てるぞ"]],
+    ["s_momiji", "throw", { sfx: "ぱぁっ" }, H(HELD.leaf, "R", 0, -10, 0), null, "leaves", ["グミ、もみじがきれいだぞ"]],
+    ["s_xmas", "gaze", { pdy: -3, sfx: "きらきら" }, null, null, "sparkle", ["グミ、ツリーがきらきらだぞ"]],
+    ["s_kotatsu", "sit", { sfx: "ぬくぬく" }, null, null, null, ["グミ、こたつから出たくないぞ"]],
+    ["s_newyear", "bow", {}, null, null, null, ["グミ、鏡もちだぞ。今年もよろしくな"]],
+    ["s_snowman", "gaze", { pdy: 1 }, null, null, "snow", ["グミ、雪だるま、とけないといいな"]],
+    ["s_higan", "gaze", { pdy: 3 }, null, null, null, ["グミ、彼岸花が赤いぞ"]],
+    ["s_acorn", "pet", {}, H(HELD.acorn, "R", -20, -10, 0), null, null, ["グミ、どんぐり集めたぞ"]]
+  ].forEach(function (r) { mk({ id: "f_" + r[0], req: r[0], kind: "furn", pose: r[1], a: r[2], dur: 9, held: r[3], worn: r[4], fx: r[5], say: r[6], target: "furn" }); });
+
+  function seasonOk(e, d) {
+    var x = (d.getMonth() + 1) * 100 + d.getDate(), a = e.from[0] * 100 + e.from[1], b = e.to[0] * 100 + e.to[1];
+    if (!(a <= b ? (x >= a && x <= b) : (x >= a || x <= b))) return false;
+    if (e.hours) { var h = d.getHours(); if (h < e.hours[0] || h >= e.hours[1]) return false; }
+    return true;
+  }
+  function winOk(e, d) { var m = d.getHours() * 60 + d.getMinutes(); return m >= e.win[0] * 60 + e.win[1] && m < e.win[2] * 60 + e.win[3]; }
+  function evAvail() {
+    var d = new Date(), t = todayIdx(), tm = [], ot = [];
+    EVL.forEach(function (e) {
+      if (SV.evDone[e.id] === t) return;
+      if (e.kind === "time") { if (winOk(e, d)) tm.push(e); }
+      else if (e.kind === "season") { if (seasonOk(e, d)) ot.push(e); }
+      else if (SV.owned[e.req]) ot.push(e);
+    });
+    return { time: tm, other: ot };
+  }
+  function furnX(id) {
+    var g = document.querySelector('.itm[data-id="' + id + '"]');
+    if (!g) return 0;
+    try { var b = g.getBBox(), p = (SV.pos && SV.pos[id]) || { x: 0 }; return clamp(b.x + b.width / 2 + p.x - CX, -300, 300); } catch (e) { return 0; }
+  }
+  function startEvent(e, now) {
+    var d = new Date(); SV.evDone[e.id] = todayIdx(); save();
+    EVC = e; mode = "ev"; modeT0 = now; evSaid = 0; evPhase = 0;
+    evX = e.target === "window" ? -300 : e.target === "furn" ? furnX(e.req) : e.target === "window0" ? cxBase : cxBase;
+    if (e.target === "window0") evX = -240;
+    evHeldEl.innerHTML = e.held ? e.held.svg : ""; evWornEl.innerHTML = e.worn || "";
+    nextChange = 1e15; modeAt = null;
+  }
+  function evLine(e, i, d) { var l = e.say && e.say[i]; if (!l) return; say(typeof l === "function" ? l(d) : l, 3800); }
+  function endEvent(now) {
+    EVC = null; mode = "idle"; modeT0 = now; evLastEnd = now; nextChange = now + rand(6000, 10000); blinkAt = now + 800;
+    evHeldEl.innerHTML = ""; evWornEl.innerHTML = "";
+  }
+  setInterval(function () {
+    var now = performance.now();
+    if (!isBase(mode) || performance.now() < 5000 || STATES[mode].short) return;
+    var av = evAvail();
+    if (av.time.length && now - evLastEnd > 15000) { startEvent(av.time[randInt(0, av.time.length - 1)], now); return; }
+    if (!av.other.length || now - evLastEnd < 90000 || mode === "sleep" || Math.random() > .25 || !sayEl.hidden) return;
+    startEvent(av.other[randInt(0, av.other.length - 1)], now);
+  }, 4000);
+
+  var SITP = function (T) { T.dy = 30; T.sy = .93; T.sx = 1.03; T.llr = 82; T.llx = -4; T.lly = 2; T.lrr = -82; T.lrx = 4; T.lry = 2; };
+  var POSE = {
+    calis: function (ct, T, R) { var ex = ct * 3, u = .5 + .5 * Math.sin(ex); T.ala = -20 - 140 * u; T.ara = -20 - 140 * u; T.als = 1.3; T.ars = 1.3; T.dy = -8 * Math.abs(Math.cos(ex)); T.mouth = 1.3; T.L = REST + 8 * Math.sin(ex * 2); R.sfx = ["いち！", "に！", "さん！", "し！"][Math.floor(ct * 1.5) % 4]; },
+    stretch: function (ct, T, R, a) { var s = .5 - .5 * Math.cos(2 * Math.PI * (ct % 5) / 5); R.eye = s > .4 ? "squint" : "open"; T.ala = -165 * s; T.ara = -165 * s; T.als = 1 + .4 * s; T.ars = 1 + .4 * s; T.sy = 1 + .07 * s; T.sx = 1 - .03 * s; T.mouth = 1 + .7 * s; T.dy = -5 * s; T.L = REST + 14 * s; R.sfx = s > .6 ? "んーっ！" : ""; },
+    sit: function (ct, T, R, a) { SITP(T); T.ala = 14; T.ara = 14; T.aly = -112; T.ary = -112; T.mouth = .9; T.L = REST - 8 + 5 * Math.sin(ct * 1.7); T.pdx = (a.pdx || 0) + 2 * Math.sin(ct * .5); R.sfx = a.sfx || ""; },
+    sitwait: function (ct, T, R) { SITP(T); T.llr = 82 + 10 * Math.sin(ct * 5); T.lrr = -82 - 10 * Math.sin(ct * 5 + 1); T.arx = 44; T.ary = -118; T.ara = -150; T.ars = 1.4; T.alx = 108; T.ala = 6; T.mouth = .9 + .3 * Math.abs(Math.sin(ct * 2.5)); T.L = REST - 4; R.eye = "happy"; R.sfx = ct % 4 > 2 ? "ごくり" : "わくわく"; },
+    eat: function (ct, T, R, a) {
+      R.eye = "happy"; T.arx = 44; T.ary = -118; T.ara = -150; T.ars = 1.4; T.alx = 108; T.ala = 6;
+      T.mouth = 1 + .5 * Math.abs(Math.sin(ct * 9)); T.sy = 1 + .015 * Math.sin(ct * 9); T.L = REST - 4; R.sfx = a.sfx || "もぐもぐ";
+      if (a.bow && ct > 6) { var b = Math.sin(Math.PI * clamp((ct - 6) / 2.4, 0, 1)); T.rot = 14 * b; T.dy = 10 * b; R.sfx = b > .5 ? "ぺこり" : R.sfx; }
+    },
+    sip: function (ct, T, R) { T.arx = 44; T.ary = -118; T.ara = -150; T.ars = 1.4; T.alx = 108; T.ala = 6; var c = ct % 4; R.eye = c > 2 ? "squint" : "open"; T.mouth = c > 2 ? .6 : .5 + .3 * Math.abs(Math.sin(ct * 6)); T.rot = c > 2 ? -2 : 0; T.L = REST - 6; R.sfx = c > 2 ? "ずずず…" : "ふーふー"; },
+    lie: function (ct, T, R, a) {
+      if (a.happy) { R.eye = "happy"; T.lie = 1; T.mouth = 1.1; T.ala = 10; T.ara = 10; T.sway = 3 * Math.sin(ct * 3); T.L = REST - 10; R.sfx = a.sfx || ""; return; }
+      R.eye = "sleep"; T.lie = 1; T.rest = 1; T.snc = 1; T.sy = 1 + .02 * Math.sin(ct * 1.4); T.mouth = .55 + .12 * Math.sin(ct * 1.4); T.L = 10; T.bub = 1; T.zzz = 1; T.ala = 10; T.ara = 10; R.sfx = "ぐぅ…";
+    },
+    gaze: function (ct, T, R, a) { T.pdx = a.pdx !== undefined ? a.pdx : -10; T.pdy = a.pdy || 0; T.rot = a.rot !== undefined ? a.rot : -2.5; T.mouth = .8; T.L = REST + 10 + 4 * Math.sin(ct * 1.3); R.sfx = ct < 6 ? (a.sfx || "") : ""; },
+    clap: function (ct, T, R) { R.eye = "happy"; T.alx = 60; T.aly = -120; T.arx = 60; T.ary = -120; var c = Math.abs(Math.sin(ct * 7)); T.ala = 30 - 50 * c; T.ara = 30 - 50 * c; T.dy = -5 * c; T.mouth = 1.3; T.L = REST + 6; R.sfx = c > .8 ? "パチパチ" : ""; },
+    bow: function (ct, T, R) { var b = Math.sin(Math.PI * clamp((ct % 4.5) / 2.4, 0, 1)); R.eye = b > .4 ? "squint" : "open"; T.rot = 14 * b; T.dy = 10 * b; T.sy = 1 - .05 * b; T.mouth = .9; R.sfx = b > .7 ? "ぺこり" : ""; },
+    sniff: function (ct, T, R, a) { R.eye = "squint"; T.L = REST - 40 + 10 * Math.sin(ct * 10); T.pdy = -3; T.rot = -4; T.mouth = .6; R.sfx = a.sfx || "くんくん"; },
+    scared: function (ct, T, R, a) { T.cx = cxBase + 2 * Math.sin(ct * 60); T.alx = 44; T.aly = -108; T.ala = 40; T.arx = 44; T.ary = -108; T.ara = 40; T.mouth = 1.3; T.pdx = 8 * Math.sin(ct * 2); T.L = REST - 12; T.sy = .97; R.sfx = a.sfx || "ぶるぶる"; },
+    write: function (ct, T, R) { SITP(T); T.arx = 74; T.ary = -112; T.ara = 30 + 12 * Math.sin(ct * 6); T.alx = 96; T.ala = 20; T.pdy = 5; T.mouth = .6; T.L = REST - 8; T.rot = 3; R.sfx = "カキカキ"; },
+    doze: function (ct, T, R, a) {
+      var w = a.wake && (ct % 6) > 5, nod = 6 * Math.sin(ct * 1.2);
+      R.eye = w ? "open" : "squint"; T.rot = w ? 0 : nod; T.sy = w ? 1.06 : 1; T.dy = w ? -10 : 0; T.mouth = w ? 1.4 : .7; T.L = REST - 6; R.sfx = w ? "はっ！" : (ct % 3 < 1.5 ? "うとうと" : "…ぐぅ");
+      if (!a.wake) { T.ala = 6; T.ara = 6; }
+    },
+    handsup: function (ct, T, R, a) { T.ala = -150; T.ara = -150; T.als = 1.2; T.ars = 1.2; T.mouth = 1.1; T.pdy = -3; T.rot = -2 + 2 * Math.sin(ct * 2); T.L = REST + 8; R.eye = "happy"; R.sfx = a.sfx || ""; },
+    wave: function (ct, T, R, a) { T.arx = 62; T.ary = -134; T.ara = -120 + 30 * Math.sin(ct * 8); T.ars = 1.2; T.mouth = 1.3; T.L = REST + 8; T.sway = 3 * Math.sin(ct * 4); R.sfx = a.sfx || ""; },
+    hug: function (ct, T, R, a) { T.alx = 40; T.aly = -100; T.ala = 40; T.arx = 40; T.ary = -100; T.ara = 40; T.sway = 6 * Math.sin(ct * 2); T.rot = 3 * Math.sin(ct * 2); R.eye = "happy"; T.mouth = 1; R.sfx = a.sfx || ""; },
+    poke: function (ct, T, R, a) {
+      var c = ct % 4, r = c < 1.4 ? c / 1.4 : 0; T.arx = 70; T.ary = -120; T.ara = 10 - 70 * r; T.mouth = .8; T.pdx = 4;
+      if (c >= 1.4 && c < 2.6) { T.dy = -20 * Math.sin(Math.PI * (c - 1.4) / 1.2); T.mouth = 1.6; R.sfx = a.sfx2 || "いてっ！"; T.alx = 60; T.ala = -40; }
+    },
+    spin: function (ct, T, R) { T.arx = 74; T.ary = -112; T.ara = 40 + 40 * Math.sin(ct * 6); T.sway = 5 * Math.sin(ct * 3); T.pdx = 6 * Math.sin(ct * 3); T.mouth = 1.1; R.eye = "happy"; R.sfx = "くるくる"; },
+    throw: function (ct, T, R, a) {
+      var c = ct % 3, w = c < .9 ? c / .9 : 1; T.arx = 62; T.ary = -134;
+      if (c < .9) { T.ara = -40 - 110 * w; T.rot = -4 * w; } else { T.ara = -150 + 170 * clamp((c - .9) / .25, 0, 1); T.rot = 6 * clamp((c - .9) / .25, 0, 1); }
+      T.mouth = c < .9 ? .8 : 1.4; R.sfx = (c > .9 && c < 1.9) ? (a.sfx || "えいっ！") : "";
+    },
+    shout: function (ct, T, R) { R.eye = "squint"; T.mouth = 1.5 + .4 * Math.abs(Math.sin(ct * 25)); T.sway = 3 * Math.sin(ct * 30); T.rot = 1.5 * Math.sin(ct * 35); T.L = REST + 12; T.ala = -20; T.ara = -20; R.sfx = "あ゛ぁ゛ぁ゛～"; },
+    peek: function (ct, T, R) { T.cx = cxBase + 10 * Math.sin(ct * 1.5); T.pdx = -8 * Math.sin(ct * 1.5); T.mouth = .7; T.ala = -60 * Math.abs(Math.sin(ct * 1.5)); T.ara = -60 * Math.abs(Math.sin(ct * 1.5)); T.L = REST - 4; R.sfx = Math.abs(Math.sin(ct * 1.5)) > .9 ? "シャッ" : ""; },
+    proud: function (ct, T, R, a) { T.sy = 1.04; T.sx = .98; T.L = REST + 6; T.alx = 100; T.ala = 60; T.arx = 100; T.ara = 60; R.eye = "happy"; T.mouth = 1; T.dy = -2 * Math.abs(Math.sin(ct * 3)); R.sfx = a.sfx || "ふふん"; },
+    dance: function (ct, T, R) { R.eye = "happy"; var dn = ct * 4.2; T.cx = cxBase + 28 * Math.sin(dn * .5); T.rot = 7 * Math.sin(dn * .5); T.dy = -10 * Math.abs(Math.sin(dn)); T.ala = -100 * (.5 + .5 * Math.sin(dn)); T.ara = -100 * (.5 - .5 * Math.sin(dn)); T.als = 1.2; T.ars = 1.2; T.llr = 24 * Math.sin(dn); T.lrr = 24 * Math.sin(dn + Math.PI); T.mouth = 1.3; T.L = REST + 10 * Math.sin(dn); T.sway = 6 * Math.sin(dn); R.sfx = (Math.floor(ct * 2) % 2) ? "♪" : "♫"; },
+    primp: function (ct, T, R) { T.arx = 56; T.ary = -190; T.ara = -150; T.ars = 1.2; T.rot = 3 * Math.sin(ct * 3); T.pdx = -4; T.mouth = .9; T.L = REST + 4; R.eye = ct % 3 > 2 ? "happy" : "open"; R.sfx = ct % 3 > 2 ? "キリッ" : ""; },
+    blow: function (ct, T, R) { var c = ct % 3; T.arx = 50; T.ary = -150; T.ara = -165; T.ars = 1.5; if (c < 1.5) { T.L = REST - 42; T.mouth = .8; R.sfx = "ずび…"; } else { R.eye = "squint"; T.L = 20; T.mouth = 1.2; T.sy = 1 + .04 * Math.sin(ct * 30); R.sfx = "ブビー！"; } },
+    pet: function (ct, T, R) { T.arx = 70; T.ary = -110; T.ara = 20 + 10 * Math.sin(ct * 3); T.alx = 96; T.ala = 20; R.eye = "happy"; T.mouth = 1; T.sway = 3 * Math.sin(ct * 1.5); R.sfx = "なでなで"; },
+    read: function (ct, T, R) { SITP(T); T.book = 1; T.pdy = 4; T.pdx = 3 * Math.sin(ct * 1.3); T.mouth = .45; T.L = REST - 4; T.alx = 112; T.aly = -88; T.ala = 6; T.arx = 62; T.ary = -92; T.ara = 84; T.rot = 1.5; },
+    block: function (ct, T, R) { var sq = .5 - .5 * Math.cos(ct * 2.2); T.dy = 38 * sq; T.sy = 1 - .08 * sq; T.llr = 50 * sq; T.lrr = -50 * sq; T.ala = -60 * sq; T.ara = -60 * sq; T.mouth = 1 + .4 * sq; T.L = REST - 10 * sq; R.sfx = sq > .9 ? "ひとーつ" : ""; }
+  };
+
+  var evFxPrev = "";
+  function fxStep(kind, tt, k, d) {
+    var i, e, p, hide = !kind || k < .01;
+    for (i = 0; i < 16; i++) {
+      e = fxEls[i];
+      if (hide) { if (e._v) { e.setAttribute("opacity", 0); e._v = 0; } continue; }
+      e._v = 1; p = (tt * (kind === "steam" ? .35 : kind === "fireworks" ? .35 : kind === "beans" ? .6 : .12) + i / 16) % 1;
+      var cx = 0, cy = 0, rx = 6, ry = 6, fill = "#fff", op = k, rot = 0;
+      if (kind === "petals" || kind === "leaves") {
+        cx = 150 + (i * 67) % 1000 + 40 * Math.sin(p * 9 + i); cy = 40 + p * 1050; rx = kind === "leaves" ? 11 : 9; ry = kind === "leaves" ? 6 : 5;
+        fill = kind === "leaves" ? ["#e07a2f", "#c8402a", "#d9a02a"][i % 3] : (i % 2 ? "#f6b8cc" : "#fbd5e0"); rot = p * 400 + i * 30; op = k * .9;
+      } else if (kind === "snow") { cx = 150 + (i * 71) % 1000 + 25 * Math.sin(p * 7 + i); cy = 40 + p * 1050; rx = ry = 5; op = k * .9; }
+      else if (kind === "stars") { if (i > 8) { op = 0; } else { cx = 190 + (i * 53) % 150; cy = 170 + (i * 71) % 220; rx = ry = 4 + 2 * Math.sin(tt * 3 + i); fill = "#fff6b0"; op = k * (.5 + .5 * Math.sin(tt * 3 + i)); } }
+      else if (kind === "sparkle") { cx = 400 + (i * 97) % 480; cy = 90 + (i * 59) % 200; rx = ry = 5 + 3 * Math.sin(tt * 4 + i); fill = "#ffe27a"; op = k * (.5 + .5 * Math.sin(tt * 4 + i * 2)); }
+      else if (kind === "steam") { cx = wx(-30 + (i % 5) * 15); cy = wy(-340) - p * 150; rx = ry = 8 + p * 14; op = k * (1 - p) * .7; }
+      else if (kind === "fireworks") {
+        var b = Math.floor(i / 5), ph = (tt * .35 + b / 3) % 1, cc = [[235, 230], [310, 300], [260, 350]][b % 3], an = (i % 5) / 5 * 6.283 + b;
+        cx = cc[0] + 60 * ph * Math.cos(an); cy = cc[1] + 60 * ph * Math.sin(an); rx = ry = 2 + 5 * (1 - ph); fill = ["#ff6b6b", "#ffd93b", "#6bc5ff"][b % 3]; op = k * (1 - ph); if (i === 15) op = 0;
+      } else if (kind === "beans") { var h = handR(); cx = wx(70) + p * 320; cy = wy(-150) + 140 * p * p - 90 * p; rx = 6; ry = 5; fill = "#e8c88a"; op = k * (1 - p * .5); }
+      e.setAttribute("cx", cx); e.setAttribute("cy", cy); e.setAttribute("rx", rx); e.setAttribute("ry", ry); e.setAttribute("fill", fill); e.setAttribute("opacity", clamp(op, 0, 1));
+      e.setAttribute("transform", rot ? "rotate(" + rot + " " + cx + " " + cy + ")" : "");
+    }
+  }
+
+
   /* ---------- main loop ---------- */
   var tearK = 0, tearG = $("tearG"), tearEls = [];
   (function () { for (var i = 0; i < 6; i++) { var c = document.createElementNS("http://www.w3.org/2000/svg", "ellipse"); c.setAttribute("rx", 9); c.setAttribute("ry", 13); c.setAttribute("fill", "#8fd0ff"); c.setAttribute("stroke", "#3a86c8"); c.setAttribute("stroke-width", 2); tearG.appendChild(c); tearEls.push(c); } })();
@@ -1903,6 +2142,24 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     } else if (mode === "growl") {
       doBlink = true; T.alx = 44; T.aly = -100; T.ala = 40; T.arx = 44; T.ary = -100; T.ara = 40;
       T.mouth = .6; T.sy = 1 + .02 * Math.sin(me * 8); T.pdy = 4; T.L = REST - 8; sfx = "ぐぅ～";
+    } else if (mode === "ev") {
+      var EE = EVC, RR = { eye: "open", sfx: "" };
+      if (!EE) { endEvent(now); }
+      else if (evPhase === 0) {
+        doBlink = true;
+        if (Math.abs(evX - cxBase) <= 6 || me > 12) { evPhase = 1; modeT0 = now; evSaid = 1; evLine(EE, 0, new Date()); sndPop(); }
+        else {
+          var edir = evX > cxBase ? 1 : -1, ew = tt * 8; cxBase += edir * 95 * dt; T.cx = cxBase;
+          T.llr = 26 * Math.sin(ew); T.lrr = -26 * Math.sin(ew); T.lly = -9 * Math.max(0, Math.sin(ew)); T.lry = -9 * Math.max(0, -Math.sin(ew));
+          T.dy = -4 * Math.abs(Math.sin(ew)); T.rot = 2.5 * Math.sin(ew) + edir * 3; T.ala = 20 * Math.sin(ew); T.ara = -20 * Math.sin(ew) + 4;
+          T.mouth = 1.1; T.L = REST + 7 * Math.sin(ew * 1.5); T.sway = 3 * Math.sin(ew);
+        }
+      } else {
+        var ect = (now - modeT0) / 1000;
+        if (evSaid === 1 && EE.say && EE.say.length > 1 && ect > 4.5) { evSaid = 2; evLine(EE, 1, new Date()); }
+        POSE[EE.pose](ect, T, RR, EE.a || {}); eye = RR.eye || "open"; sfx = RR.sfx || "";
+        if (ect >= EE.dur) endEvent(now);
+      }
     } else if (mode === "react") {
       speed = 24; var rt = me, rd = RDUR[rk] || 1.5, rk1 = Math.max(0, 1 - rt / rd);
       if (rk === "giggle") {
@@ -2039,6 +2296,11 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     restHand.setAttribute("opacity", clamp(cur.rest, 0, 1));
     bookG.setAttribute("opacity", cur.book > .05 ? 1 : 0);
     bookInner.setAttribute("transform", "translate(-52 " + (-96 + (1 - cur.book) * 40) + ") rotate(" + (-8 + 1.5 * Math.sin(tt * 1.3)) + ") scale(1.2)");
+
+    var evOn = mode === "ev" && evPhase === 1 && EVC;
+    if (evOn && EVC.held) { var hh = EVC.held.hand === "L" ? handL() : handR(); evHeldEl.setAttribute("transform", tr(hh, EVC.held.ox, EVC.held.oy, EVC.held.r) + " scale(" + EVC.held.s + ")"); evHeldEl.setAttribute("opacity", 1); } else evHeldEl.setAttribute("opacity", 0);
+    evWornEl.setAttribute("opacity", mode === "ev" && EVC && EVC.worn ? 1 : 0);
+    fxStep(evOn ? EVC.fx : null, tt, evOn ? 1 : 0);
 
     // props + onomatopoeia
     var po = clamp(cur.pa, 0, 1);
@@ -2320,18 +2582,18 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     return { first: first, hours: hours, absence: absence, sameDay: sameDay, openDays: SV.openDays, elapsed: t - SV.firstOpenDay };
   })();
 
-  var nextTalk = performance.now() + 45000;
+  var nextTalk = performance.now() + 30000;
   function talkTick(now) {
     if (now < nextTalk) return;
-    nextTalk = now + rand(40000, 70000);
-    if (!isBase(mode) || !sayEl.hidden || (STATES[mode].angry && mode !== "sleep" && mode !== "read")) return;
+    nextTalk = now + 30000;
+    if (!isBase(mode) || !sayEl.hidden || (STATES[mode].angry && mode !== "sleep" && mode !== "read")) { nextTalk = now + 4000; return; }
     var m = mode === "sleep" ? "むにゃ… " : mode === "read" ? "ぶつぶつ… " : "";
     say(m + (Math.random() < .6 ? hintLine() : bandLine(growthOf(SV.openDays))), 3600);
   }
   $("talk").addEventListener("click", function () {
     if (!isBase(mode)) return;
     var m = mode === "sleep" ? "むにゃ… " : mode === "read" ? "ぶつぶつ… " : "";
-    say(m + (Math.random() < .5 ? hintLine() : chatLine()), 3800); nextTalk = performance.now() + 45000;
+    say(m + (Math.random() < .5 ? hintLine() : chatLine()), 3800); nextTalk = performance.now() + 30000;
   });
 
   (function intro() {
