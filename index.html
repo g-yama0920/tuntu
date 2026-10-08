@@ -151,7 +151,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 .game .card.ok { opacity: .45; }
 .game .card svg { width: 80%; height: 80%; }
 .game .cups { position: relative; height: 104px; margin: 36px 0 4px; }
-.game .cup { position: absolute; top: 0; width: 28%; height: 100%; transition: left .32s ease; padding: 0; background: none; border: 0; border-radius: 0; min-width: 0; }
+.game .cup { position: absolute; top: 0; width: 28%; height: 100%; transition: left .24s ease; padding: 0; background: none; border: 0; border-radius: 0; min-width: 0; }
 .game .cup .ball { position: absolute; left: 50%; bottom: 6px; width: 46px; height: 46px; margin-left: -23px; }
 .game .cup .ball svg { width: 100%; height: 100%; }
 .game .cup .lid { position: absolute; left: 4%; right: 4%; bottom: 0; height: 74px; background: #f4c85a; border: 2.5px solid var(--line); border-radius: 8px 8px 22px 22px; transition: transform .25s ease; }
@@ -161,6 +161,24 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 .game .bar b { position: absolute; top: -2px; bottom: -2px; width: 4px; background: #d9573a; }
 .game .holes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 6px 0; }
 .game .hole { padding: 0; min-width: 0; height: 52px; font-size: 1.8rem; background: #cdb98a; border-radius: 26px; display: flex; align-items: center; justify-content: center; }
+.game .lanes { display: flex; gap: 8px; margin: 6px 0; }
+.game .lane { flex: 1; position: relative; height: 128px; border: 2.5px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden; }
+.game .lane .who { position: absolute; top: 4px; left: 8px; font-size: .75rem; font-weight: 800; color: var(--muted); }
+.game .lane .pc { position: absolute; left: 50%; bottom: 6px; width: 40px; margin-left: -20px; height: 40px; font-size: 1.7rem; text-align: center; line-height: 40px; transition: transform .12s ease-out; }
+.game .lane .pc.up { transform: translateY(-54px); }
+.game .lane .tb { display: block; width: 38px; height: 40px; margin: 0 auto; border-radius: 50% 50% 45% 45%; background: #f7e2ab; border: 2.5px solid var(--line); font-size: 1rem; line-height: 36px; }
+.game .lane .drop { position: absolute; left: 50%; margin-left: -10px; top: -26px; font-size: 1.3rem; }
+.game .lane.hit { background: #ffe3dc; }
+.game .pair { display: flex; gap: 10px; justify-content: center; margin: 8px 0; }
+.game .pair button { flex: 1; max-width: 160px; background: #fff; flex-direction: column; display: flex; align-items: center; gap: 4px; padding: 10px 8px; }
+.game .pair button svg { width: 62px; height: 62px; }
+.game .bingo { display: flex; gap: 12px; justify-content: center; align-items: flex-start; margin-top: 4px; }
+.game .bingo .cards { grid-template-columns: repeat(3, 1fr); gap: 5px; width: 52%; margin-top: 0; }
+.game .bingo .card { font-size: 1.2rem; font-weight: 800; aspect-ratio: 1.2; }
+.game .bingo .card.mk { background: #9bdcb4; }
+.game .bingo .tcard { width: 34%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; font-size: .72rem; }
+.game .bingo .tcard span { border: 1.5px solid var(--line); border-radius: 5px; padding: 3px 0; background: #f4c85a; }
+.game .bingo .tcard span.mk { background: #9bdcb4; }
 .viewer { position: fixed; inset: 0; z-index: 50; background: rgba(20,14,6,.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; }
 .viewer[hidden] { display: none; }
 .viewer img { max-width: 100%; max-height: 68vh; border: 3px solid var(--line); border-radius: 10px; background: #fff; }
@@ -2909,7 +2927,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   /* ---------- つんつ君と勝負（じゃんけん毎日／ほか3種は気まぐれで1日1回） ---------- */
   var gameOn = false, gameLast = -1e9, gameEl = document.createElement("div");
   gameEl.className = "game"; gameEl.hidden = true; document.body.appendChild(gameEl);
-  var GAME_NAME = { jk: "じゃんけん", mem: "神経衰弱", dir: "あっち向いてホイ", fast: "早押し", baba: "ババ抜き", cups: "コップあて", nose: "鼻水のばし", mole: "もぐらたたき" };
+  var GAME_NAME = { jk: "じゃんけん", mem: "神経衰弱", dir: "あっち向いてホイ", fast: "早押し", baba: "ババ抜き", cups: "コップあて", nose: "鼻水のばし", mole: "もぐらたたき", jump: "ジャンプ競争", weigh: "重さくらべ", bingo: "ビンゴ" };
   function shuf(a) { for (var i = a.length - 1; i > 0; i--) { var j = randInt(0, i), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   var HANDS = ["✊", "✌️", "✋"], DIRS = [["↑", "うえ"], ["↓", "した"], ["←", "ひだり"], ["→", "みぎ"]];
   var gTimers = [];
@@ -2976,7 +2994,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   }
   function fastPlay() {
     gHtml(GAME_NAME.fast, "「いま！」と出たら すぐ タップ", "", '<div class="gr" style="margin-top:4px">' + gBtn("tap", "まて…", "big") + '</div>');
-    var btn = gameEl.querySelector("button[data-g]"), t0 = 0, done = false, ready = false, him = rand(260, 440);
+    var btn = gameEl.querySelector("button[data-g]"), t0 = 0, done = false, ready = false, him = rand(240, 380);
     gT(function () { ready = true; t0 = performance.now(); btn.textContent = "いま！"; btn.classList.add("go"); }, rand(1800, 4600));
     function tap(e) {
       if (done) return; done = true; if (e) e.preventDefault(); gClear();
@@ -3094,7 +3112,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
             shuffles++;
             var a = randInt(0, 2), b = (a + randInt(1, 2)) % 3, t = slots[a]; slots[a] = slots[b]; slots[b] = t;
             for (var k = 0; k < 3; k++) cups[k].style.left = (slots[k] * 34 + 4) + "%";
-            sndPop(); gT(swap, 520);
+            sndPop(); gT(swap, 300);
           }
           swap();
         }, 500);
@@ -3115,7 +3133,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     roundStart();
   }
   function nosePlay() {
-    var tgt = rand(42, 85), him = Math.max(5, Math.min(98, tgt + rand(-13, 13))), v = 0, t0 = 0, held = false, done = false, raf = 0;
+    var tgt = rand(42, 85), him = Math.max(5, Math.min(98, tgt + rand(-10, 10))), v = 0, t0 = 0, held = false, done = false, raf = 0;
     function cm(p) { return (p / 2).toFixed(1) + "cm"; }
     gHtml(GAME_NAME.nose, "ボタンを おしてる間、鼻水がのびる。赤い線に いちばん近く はなせ", "", '<div class="bar"><i id="nbar"></i><b style="left:' + tgt + '%"></b></div><div class="gs">つんつの めやす：' + cm(tgt) + '</div><div class="gr">' + gBtn("hold", "おして のばす", "big") + '</div>');
     say("つんつは " + cm(tgt) + " くらいのばせるぞ", 3600);
@@ -3145,12 +3163,91 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
         if (n >= 10 && me !== him) { gFinish("mole", me > him, 20); return; }
         n++; var prev = h; do { h = randInt(0, 8); } while (h === prev);
         active = true; draw("", h, "🐹");
-        var tt = Math.random() < .72 ? rand(420, 950) : -1;
+        var tt = Math.random() < .9 ? rand(320, 760) : -1;
         if (tt > 0) gT(function () { if (active) { active = false; him++; draw("つんつ君がたたいた！", h, "😏"); nextRound(); } }, tt);
         gT(function () { if (active) { active = false; draw("にげた…", -1, ""); nextRound(); } }, 1150);
       }, 450);
     }
     draw("じゅんび…", -1, ""); nextRound();
+  }
+
+  function jumpPlay() {
+    gHtml(GAME_NAME.jump, "タップでジャンプ！鼻水をよけて、先に10回よけたら勝ち", "", '<div class="lanes"><div class="lane" id="jlg"><span class="who">グミ</span><span class="pc" id="jpg">🧍</span></div><div class="lane" id="jlt"><span class="who">つんつ</span><span class="pc" id="jpt"><i class="tb">··</i></span></div></div><div class="gs" id="jsc">グミ 0 － 0 つんつ</div><div class="gr" style="margin-top:2px">' + gBtn("jump", "ジャンプ！", "big") + '</div>');
+    var laneG = gameEl.querySelector("#jlg"), laneT = gameEl.querySelector("#jlt"), pg = gameEl.querySelector("#jpg"), pt = gameEl.querySelector("#jpt"), sc = gameEl.querySelector("#jsc"), btn = gameEl.querySelector("button[data-g=jump]");
+    var g = 0, t = 0, nDrop = 0, airFrom = 0, airTo = 0, cool = 0, over = false, F = 900;
+    btn.style.padding = "14px 10px";
+    btn.addEventListener("pointerdown", function (e) {
+      e.preventDefault(); var now = performance.now(); if (over || now < cool) return;
+      cool = now + 800; airFrom = now + 60; airTo = now + 480; pg.classList.add("up"); sndPop(); gT(function () { pg.classList.remove("up"); }, 480);
+    });
+    function upd() { sc.textContent = "グミ " + g + " － " + t + " つんつ"; }
+    function spawn() {
+      if (over) return;
+      nDrop++;
+      var land = performance.now() + F, tOk = Math.random() < .72;
+      [laneG, laneT].forEach(function (ln) {
+        var d = document.createElement("span"); d.className = "drop"; d.textContent = "💧"; ln.appendChild(d);
+        requestAnimationFrame(function () { requestAnimationFrame(function () { d.style.transition = "top " + F + "ms linear"; d.style.top = "78px"; }); });
+        gT(function () { if (d.parentNode) d.parentNode.removeChild(d); }, F + 120);
+      });
+      if (tOk) gT(function () { pt.classList.add("up"); gT(function () { pt.classList.remove("up"); }, 480); }, F - 280);
+      gT(function () {
+        if (over) return;
+        var ok = land >= airFrom && land <= airTo;
+        if (ok) g++; else { laneG.classList.add("hit"); gT(function () { laneG.classList.remove("hit"); }, 250); }
+        if (tOk) t++; else { laneT.classList.add("hit"); gT(function () { laneT.classList.remove("hit"); }, 250); }
+        upd();
+        if (((g >= 10 || t >= 10) && g !== t) || nDrop >= 40) { over = true; gT(function () { gFinish("jump", g > t, 20); }, 700); }
+      }, F + 20);
+      gT(spawn, rand(1250, 1750));
+    }
+    gT(spawn, 900);
+  }
+  function weighPlay() {
+    var items = [["onigiri", "おにぎり", 110], ["pudding", "プリン", 120], ["curry", "カレーパン", 150], ["fish", "焼き魚", 170]];
+    var round = 0, wins = 0, losses = 0;
+    function next() {
+      round++;
+      var ab = shuf(items.slice()).slice(0, 2), a = ab[0], b = ab[1];
+      function card(it, k) { return '<button type="button" data-g="' + k + '"><svg viewBox="0 0 64 64">' + ICONS[it[0]] + '</svg>' + it[1] + '</button>'; }
+      gHtml(GAME_NAME.weigh, round + "もんめ：どっちが重い？", "", '<div class="pair">' + card(a, 0) + card(b, 1) + '</div><div class="gs">グミ ' + wins + ' － ' + losses + ' つんつ（2もん 当てたら勝ち）</div>');
+      var heavy = a[2] > b[2] ? 0 : 1, guess = Math.random() < .55 ? heavy : 1 - heavy;
+      say("つんつは " + (guess ? b : a)[1] + " だと思うぞ", 2800);
+      gOn(function (v) {
+        var ok = +v === heavy; if (ok) wins++; else losses++;
+        if (ok) sndCoin(); else sndPop();
+        gHtml(GAME_NAME.weigh, ok ? "あたり！" : "はずれ…", a[1] + " " + a[2] + "g<small>vs</small>" + b[1] + " " + b[2] + "g", "");
+        gT(function () { if (wins >= 2) gFinish("weigh", true, 20); else if (losses >= 2) gFinish("weigh", false, 0); else next(); }, 1600);
+      });
+    }
+    next();
+  }
+  function bingoPlay() {
+    var order = shuf(Array.apply(null, Array(15)).map(function (_, i) { return i + 1; })), gC = shuf(order.slice()).slice(0, 9), tC = shuf(order.slice()).slice(0, 9);
+    var gM = {}, tM = {}, cur = 0, k = -1, over = false, LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+    function line(card, M) { return LINES.some(function (l) { return l.every(function (i) { return M[card[i]]; }); }); }
+    function cnt(M) { return Object.keys(M).length; }
+    function draw(sub) {
+      gHtml(GAME_NAME.bingo, sub, cur ? "いま：" + cur : "…", '<div class="bingo"><div class="cards">' + gC.map(function (n) { return '<button type="button" data-g="' + n + '" class="card' + (gM[n] ? " mk" : "") + '">' + n + '</button>'; }).join("") + '</div><div class="tcard">' + tC.map(function (n) { return '<span' + (tM[n] ? ' class="mk"' : "") + '>' + n + '</span>'; }).join("") + '</div></div><div class="gs" style="margin-top:4px">グミのカード　／　つんつのカード</div>');
+      gOn(function (v) {
+        var n = +v; if (over || n !== cur || gM[n]) return;
+        gM[n] = 1; sndCoin(); draw("マーク！");
+        if (line(gC, gM)) end(true);
+      });
+    }
+    function end(win) { over = true; gClear(); say(win ? "ビンゴだと！？" : "ビンゴだぞ！", 2200); gT(function () { gFinish("bingo", win, 20); }, 1200); }
+    function call() {
+      if (over) return;
+      k++;
+      if (k >= order.length) { end(cnt(gM) > cnt(tM)); return; }
+      cur = order[k]; draw("カードの 同じ数字を タップ！"); say(cur + "！", 1400); sndPop();
+      gT(function () {
+        if (over) return;
+        if (tC.indexOf(cur) >= 0) { tM[cur] = 1; draw(""); if (line(tC, tM)) { end(false); return; } }
+      }, 1100);
+      gT(call, 1900);
+    }
+    gT(call, 800); draw("じゅんび…");
   }
   function startGame(kind) {
     gameOn = true; gameEl.hidden = false;
@@ -3161,6 +3258,9 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     else if (kind === "cups") cupsPlay();
     else if (kind === "nose") nosePlay();
     else if (kind === "mole") molePlay();
+    else if (kind === "jump") jumpPlay();
+    else if (kind === "weigh") weighPlay();
+    else if (kind === "bingo") bingoPlay();
     else memPlay();
   }
   function invite(kind) {
@@ -3181,7 +3281,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     var wait = function (k) { return SV[k + "LaterDay"] === t && Date.now() < (SV[k + "Later"] || 0); };
     if (SV.jkDay !== t && !wait("jk")) { invite("jk"); return; }
     if (SV.gmDay !== t && !wait("gm")) {
-      if (SV.gmKindDay !== t) { SV.gmKind = ["mem", "dir", "fast", "baba", "cups", "nose", "mole"][randInt(0, 6)]; SV.gmKindDay = t; save(); }
+      if (SV.gmKindDay !== t) { SV.gmKind = ["mem", "dir", "fast", "baba", "cups", "nose", "mole", "jump", "weigh", "bingo"][randInt(0, 9)]; SV.gmKindDay = t; save(); }
       invite(SV.gmKind);
     }
   }, 7000);
