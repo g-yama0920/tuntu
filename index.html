@@ -2940,7 +2940,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 
 
   /* ---------- つんつ君と勝負（じゃんけん毎日／ほか3種は気まぐれで1日1回） ---------- */
-  var gameOn = false, gameLast = -1e9, gameEl = document.createElement("div");
+  var gPractice = /[?&]practice/.test(location.search), gameOn = false, gameLast = -1e9, gameEl = document.createElement("div");
   gameEl.className = "game"; gameEl.hidden = true; document.body.appendChild(gameEl);
   var GAME_NAME = { jk: "じゃんけん", mem: "神経衰弱", dir: "あっち向いてホイ", fast: "早押し", baba: "ババ抜き", cups: "コップあて", nose: "鼻水のばし", mole: "もぐらたたき", jump: "ジャンプ競争", weigh: "重さくらべ", bingo: "ビンゴ", sugo: "すごろく", simon: "いろ当て", stopw: "ストップウォッチ", ball: "ボール当て", big: "おっきい数字" };
   function shuf(a) { for (var i = a.length - 1; i > 0; i--) { var j = randInt(0, i), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
@@ -2965,7 +2965,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   function gFinish(kind, win, reward) {
     gClear();
     var name = GAME_NAME[kind];
-    if (win) {
+    if (gPractice) reward = 0;
+    if (win && !gPractice) {
       SV.coins += reward; save(); showCoins(); coinPop(reward, "かち！"); sndCoin(); vibrate(30);
       say("くっ…負けたぞ。つんつ " + reward + "つ、持ってけ", 4200); gPose("sob", {});
       gHtml(name + "：グミの勝ち！", "つんつを " + reward + " もらった", "🎉", '<div class="gr">' + gBtn("close", "とじる", "sub") + '</div>');
@@ -3383,6 +3384,18 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       gT(function () { if (a === b) { me = [0, 0, 0].map(function () { return randInt(1, 9); }); him = [0, 0, 0].map(function () { return randInt(1, 9); }); swapped = false; draw(); } else gFinish("big", a > b, 20); }, 1700);
     }
     draw();
+  }
+  if (gPractice) {
+    var pm = document.createElement("div");
+    pm.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:50;background:#fff8e6;border-bottom:2px solid #1c1a17;padding:6px;display:flex;flex-wrap:wrap;gap:4px;font:700 .72rem sans-serif";
+    pm.innerHTML = '<span style="width:100%">れんしゅう（つんつは もらえない）</span>';
+    Object.keys(GAME_NAME).forEach(function (k) {
+      var b = document.createElement("button"); b.type = "button"; b.textContent = GAME_NAME[k];
+      b.style.cssText = "padding:4px 8px;border:1.5px solid #1c1a17;border-radius:999px;background:#fff;font:inherit";
+      b.addEventListener("click", function () { if (gameOn) gClose(); startGame(k); });
+      pm.appendChild(b);
+    });
+    document.body.appendChild(pm);
   }
   function startGame(kind) {
     gameOn = true; gameEl.hidden = false;
