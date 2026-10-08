@@ -2966,10 +2966,10 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     gClear();
     var name = GAME_NAME[kind];
     if (gPractice) reward = 0;
-    if (win && !gPractice) {
-      SV.coins += reward; save(); showCoins(); coinPop(reward, "かち！"); sndCoin(); vibrate(30);
-      say("くっ…負けたぞ。つんつ " + reward + "つ、持ってけ", 4200); gPose("sob", {});
-      gHtml(name + "：グミの勝ち！", "つんつを " + reward + " もらった", "🎉", '<div class="gr">' + gBtn("close", "とじる", "sub") + '</div>');
+    if (win) {
+      if (reward) { SV.coins += reward; save(); showCoins(); coinPop(reward, "かち！"); sndCoin(); vibrate(30); }
+      say(reward ? "くっ…負けたぞ。つんつ " + reward + "つ、持ってけ" : "くっ…負けたぞ", 4200); gPose("sob", {});
+      gHtml(name + "：グミの勝ち！", (reward ? "つんつを " + reward + " もらった" : "（れんしゅう）"), "🎉", '<div class="gr">' + gBtn("close", "とじる", "sub") + '</div>');
     } else {
       say("つんつの勝ちだぞ。ふふん", 3800); gPose("proud", { sfx: "ふふん" });
       gHtml(name + "：つんつ君の勝ち", "また あした しょうぶだ", "😏", '<div class="gr">' + gBtn("close", "とじる", "sub") + '</div>');
