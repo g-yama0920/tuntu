@@ -2367,8 +2367,6 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     first: ["…グミ、か。…まあいい、ここはおれの部屋だ", "お、グミか。…鼻水は見るなよ"],
     first2: "グミ、ごはんをくれるなら歓迎するぞ。つついてもいいが、やさしくな",
     gen: [
-      "グミはスレンダーだな", "グミのOPはグミみたいだって、そいちゃんが言ってたなぁ", "グミ、つんつは人間の数字でいくつだ？４くらいか？", "グミ、つんつのパンツしらねぇか？", "俺はつんつ君。グミはうんち君。",
-      "グミは歌が上手いからなぁ", "グミ、今日は配信か？無理せず頑張れよ", "グミ、なそは元気か？あいつはとにかくビッグだ", "グミ、たまには、そいちゃんに甘えろよ", "グミ、そいちゃんにOP送ってやれ", "グミ、セブンのわかめラーメンがうめぇんだ", "グミ、背中かいてくれ。かいかいかいかい", "俺の夢はこの部屋をゴージャスにする事だ",
       "グミ、今日も風呂入るんだぞ", "グミ、ちゃんと飯食えよ", "グミ、今日もパーマ似合ってるぞ", "グミ、水ちゃんと飲んでるか", "グミ、無理しすぎるなよ",
       "グミ、歯みがきは忘れるなよ", "グミ、スマホばっかり見てると目が疲れるぞ", "グミ、たまには遠くを見ろよ", "グミ、姿勢が悪くなってるぞ。背すじ伸ばせ", "グミ、笑ってるほうが似合うぞ",
       "グミ、グミの新作買ったか？", "グミ、新しいグミ見つけたら教えろよ", "グミ、グミばっか食ってないで野菜も食えよ", "グミ、グミは一日ひと袋までだぞ", "グミ、固いグミと柔らかいグミ、どっち派だ？",
@@ -2534,6 +2532,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     var cand = [[4, L[bandOfT(t)]], [2, L.gen], [1, L.week[d.getDay()]], [1, L.month[d.getMonth()]], [1, L.growth[g]]];
     if (rainyOf(todayIdx())) cand.push([2, L.rain]);
     if (isBirthday(d)) cand.push([3, L.birthday]);
+    if (Math.random() < .2) return mineLine();
     var tot = 0; cand.forEach(function (c) { tot += c[0]; });
     var r = Math.random() * tot;
     for (var i = 0; i < cand.length; i++) { r -= cand[i][0]; if (r <= 0) return pick(cand[i][1]); }
@@ -2543,6 +2542,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 
   // 2026/10/8 限定：21時以降に開いたとき1回だけ
   function setliOk() { var d = new Date(); return !SV.setli && d.getFullYear() === 2026 && d.getMonth() === 9 && d.getDate() === 8 && d.getHours() >= 21; }
+  L.mine = ["グミはスレンダーだな", "グミのOPはグミみたいだって、そいちゃんが言ってたなぁ", "グミ、つんつは人間の数字でいくつだ？４くらいか？", "グミ、つんつのパンツしらねぇか？", "俺はつんつ君。グミはうんち君。", "グミは歌が上手いからなぁ", "グミ、今日は配信か？無理せず頑張れよ", "グミ、なそは元気か？あいつはとにかくビッグだ", "グミ、たまには、そいちゃんに甘えろよ", "グミ、そいちゃんにOP送ってやれ", "グミ、セブンのわかめラーメンがうめぇんだ", "グミ、背中かいてくれ。かいかいかいかい", "俺の夢はこの部屋をゴージャスにする事だ"];
+  function mineLine() { return pick(L.mine); }
   L.lonely = ["グミ、つんつは寂しかったぞ", "グミ、やっと来たな。ずっと待ってたぞ", "グミ、おそいぞ。…でも来てくれてうれしいぞ", "グミ、ひとりで部屋にいるの、けっこう寂しいんだぞ", "グミ、会いたかったぞ。…べつに鼻水は関係ないぞ", "グミ、おまえがいない間、窓ばっかり見てたぞ", "グミ、おかえり。つんつは寂しくて鼻水が止まらなかったぞ", "グミ、来てくれたのか。…ずっと待ってたんだぞ", "グミ、ひさしぶりだな。つんつ、ちょっと寂しかったぞ", "グミ、ほっとかれたかと思ったぞ。…来てくれてよかった", "グミ、待ってる間ずっと、グミのこと考えてたぞ", "グミ、おまえの顔が見られて安心したぞ"];
   var SETLI = "グミ、シュワシュワセトリ良かったぞ。つんつは感動して鼻水たれたぞ";
   function buildGreeting(ctx) {
@@ -2588,12 +2589,12 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     nextTalk = now + 30000;
     if (!isBase(mode) || !sayEl.hidden || (STATES[mode].angry && mode !== "sleep" && mode !== "read")) { nextTalk = now + 4000; return; }
     var m = mode === "sleep" ? "むにゃ… " : mode === "read" ? "ぶつぶつ… " : "";
-    say(m + (Math.random() < .6 ? hintLine() : bandLine(growthOf(SV.openDays))), 3600);
+    say(m + (Math.random() < .3 ? mineLine() : Math.random() < .5 ? hintLine() : bandLine(growthOf(SV.openDays))), 3600);
   }
   $("talk").addEventListener("click", function () {
     if (!isBase(mode)) return;
     var m = mode === "sleep" ? "むにゃ… " : mode === "read" ? "ぶつぶつ… " : "";
-    say(m + (Math.random() < .5 ? hintLine() : chatLine()), 3800); nextTalk = performance.now() + 30000;
+    say(m + (Math.random() < .3 ? mineLine() : Math.random() < .5 ? hintLine() : chatLine()), 3800); nextTalk = performance.now() + 30000;
   });
 
   (function intro() {
