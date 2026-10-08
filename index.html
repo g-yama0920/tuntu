@@ -133,6 +133,23 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 .alg img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
 .alg button:focus-visible { outline: 3px solid var(--muted); outline-offset: 2px; }
 .alempty { font-size: .85rem; color: var(--muted); text-align: center; padding: 10px 0; line-height: 1.6; }
+.game { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; max-width: 560px; margin-inline: auto; background: var(--panel); color: var(--fg); border: 2.5px solid var(--line); border-bottom: 0; border-radius: 20px 20px 0 0; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -6px 22px rgba(0,0,0,.22); text-align: center; }
+.game[hidden] { display: none; }
+.game .gt { font-weight: 800; font-size: 1rem; margin-bottom: 2px; }
+.game .gs { font-size: .85rem; color: var(--muted); min-height: 1.3em; margin-bottom: 4px; }
+.game .gm { font-size: 2.2rem; line-height: 1.25; margin: 4px 0; letter-spacing: .12em; }
+.game .gm small { display: block; font-size: .9rem; letter-spacing: 0; font-weight: 700; }
+.game .gr { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+.game button { all: unset; cursor: pointer; box-sizing: border-box; background: var(--coin); color: #1c1a17; border: 2px solid var(--line); border-radius: 12px; padding: 9px 16px; font-weight: 800; font-size: 1rem; min-width: 64px; text-align: center; }
+.game button.sub { background: var(--card); color: var(--fg); }
+.game button.hand { font-size: 2rem; padding: 8px 14px; line-height: 1.1; }
+.game button.big { width: 100%; padding: 26px 10px; font-size: 1.4rem; background: #d9d2c0; }
+.game button.big.go { background: #7fcf6a; }
+.game .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 6px; }
+.game .card { aspect-ratio: 1; padding: 0; min-width: 0; border-radius: 10px; background: #f4c85a; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; }
+.game .card.up, .game .card.ok { background: #fff; }
+.game .card.ok { opacity: .45; }
+.game .card svg { width: 80%; height: 80%; }
 .viewer { position: fixed; inset: 0; z-index: 50; background: rgba(20,14,6,.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; }
 .viewer[hidden] { display: none; }
 .viewer img { max-width: 100%; max-height: 68vh; border: 3px solid var(--line); border-radius: 10px; background: #fff; }
@@ -518,7 +535,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   ];
 
   /* ---------- save ---------- */
-  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0, setli: 0, tokyo: -1, evDone: {}, kusu: 0 };
+  var SV = { coins: 0, owned: {}, sneezes: 0, eaten: {}, streak: 0, lastFeedDay: -1, bonusDay: -1, firstOpenDay: null, lastOpenDay: null, lastOpenTs: 0, openDays: 0, fedCount: 0, fullSince: 0, mileShown: 0, openMileShown: 0, pos: {}, ever: {}, bdayGift: 0, setli: 0, tokyo: -1, evDone: {}, kusu: 0, jkDay: -1, gmDay: -1, gmKind: "", gmKindDay: -1 };
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) {
@@ -1842,7 +1859,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   }
   setInterval(function () {
     var now = performance.now();
-    if (!isBase(mode) || performance.now() < 5000 || STATES[mode].short) return;
+    if (gameOn || !isBase(mode) || performance.now() < 5000 || STATES[mode].short) return;
     var av = evAvail();
     if (av.time.length && now - evLastEnd > 15000) { startEvent(av.time[randInt(0, av.time.length - 1)], now); return; }
     if (!av.other.length || now - evLastEnd < 90000 || mode === "sleep" || Math.random() > .25 || !sayEl.hidden) return;
@@ -2839,6 +2856,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   var nextTalk = performance.now() + 60000;
   function talkTick(now) {
     if (now < nextTalk) return;
+    if (gameOn) { nextTalk = now + 4000; return; }
     nextTalk = now + 60000;
     if (!isBase(mode) || !sayEl.hidden || (STATES[mode].angry && mode !== "sleep" && mode !== "read")) { nextTalk = now + 4000; return; }
     var m = mode === "sleep" ? "むにゃ… " : mode === "read" ? "ぶつぶつ… " : "";
@@ -2876,9 +2894,178 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     if (openCtx.hours >= 24 && !openCtx.first) setTimeout(function () { if (isBase(mode)) startCry(performance.now()); }, 900);
   })();
 
+
+  /* ---------- つんつ君と勝負（じゃんけん毎日／ほか3種は気まぐれで1日1回） ---------- */
+  var gameOn = false, gameLast = -1e9, gameEl = document.createElement("div");
+  gameEl.className = "game"; gameEl.hidden = true; document.body.appendChild(gameEl);
+  var GAME_NAME = { jk: "じゃんけん", mem: "神経衰弱", dir: "あっち向いてホイ", fast: "早押し" };
+  var HANDS = ["✊", "✌️", "✋"], DIRS = [["↑", "うえ"], ["↓", "した"], ["←", "ひだり"], ["→", "みぎ"]];
+  var gTimers = [];
+  function gT(fn, ms) { var id = setTimeout(fn, ms); gTimers.push(id); return id; }
+  function gClear() { gTimers.forEach(clearTimeout); gTimers = []; }
+  function gPose(pose, a) {
+    if (!isBase(mode) || mode === "sleep" || mode === "read" || STATES[mode].short) return;
+    startEvent({ id: "act", kind: "free", pose: pose, a: a || {}, dur: 4, held: null, worn: null, fx: null, say: null, target: null }, performance.now());
+  }
+  function gHtml(title, sub, mid, btns) {
+    gameEl.innerHTML = '<div class="gt">' + title + '</div><div class="gs">' + (sub || "") + '</div>' + (mid ? '<div class="gm">' + mid + '</div>' : "") + (btns || "");
+  }
+  function gBtn(id, label, cls) { return '<button type="button" data-g="' + id + '"' + (cls ? ' class="' + cls + '"' : "") + '>' + label + '</button>'; }
+  function gOn(handler) {
+    Array.prototype.forEach.call(gameEl.querySelectorAll("button[data-g]"), function (b) {
+      b.addEventListener("click", function () { handler(b.getAttribute("data-g")); });
+    });
+  }
+  function gClose() { gClear(); gameEl.hidden = true; gameEl.innerHTML = ""; gameOn = false; gameLast = performance.now(); }
+  function gFinish(kind, win, reward) {
+    gClear();
+    var name = GAME_NAME[kind];
+    if (win) {
+      SV.coins += reward; save(); showCoins(); coinPop(reward, "かち！"); sndCoin(); vibrate(30);
+      say("くっ…負けたぞ。つんつ " + reward + "つ、持ってけ", 4200); gPose("sob", {});
+      gHtml(name + "：グミの勝ち！", "つんつを " + reward + " もらった", "🎉", '<div class="gr">' + gBtn("close", "とじる", "sub") + '</div>');
+    } else {
+      say("つんつの勝ちだぞ。ふふん", 3800); gPose("proud", { sfx: "ふふん" });
+      gHtml(name + "：つんつ君の勝ち", "また あした しょうぶだ", "😏", '<div class="gr">' + gBtn("close", "とじる", "sub") + '</div>');
+    }
+    gOn(function () { gClose(); });
+  }
+  // じゃんけん（あいこは続ける）。cb(win)
+  function jankenPlay(kind, sub, cb) {
+    gHtml(GAME_NAME[kind], sub || "グー・チョキ・パーを えらべ", "", '<div class="gr">' + HANDS.map(function (h, i) { return gBtn(i, h, "hand"); }).join("") + '</div>');
+    gOn(function (v) {
+      var me = +v, him = randInt(0, 2), r = (me - him + 3) % 3;
+      var res = r === 0 ? "あいこ！" : r === 2 ? "グミの勝ち！" : "つんつの勝ち！";
+      say(["ぽん！", "じゃんけん…ぽん！"][randInt(0, 1)], 1200); sndPop();
+      gHtml(GAME_NAME[kind], res, "グミ " + HANDS[me] + "<small>vs</small>つんつ " + HANDS[him], "");
+      gT(function () {
+        if (r === 0) { say("あいこで…", 1200); jankenPlay(kind, "あいこで…", cb); }
+        else cb(r === 2);
+      }, 1300);
+    });
+  }
+  function dirPlay(sub) {
+    jankenPlay("dir", sub, function (win) {
+      var title = GAME_NAME.dir;
+      gHtml(title, win ? "グミの勝ち！ゆびさす 方向を えらべ" : "つんつの勝ち！むく 方向を えらべ", "", '<div class="gr">' + DIRS.map(function (d, i) { return gBtn(i, d[0], "hand"); }).join("") + '</div>');
+      gOn(function (v) {
+        var me = +v, him = randInt(0, 3);
+        if (win) {
+          say("あっち向いて…ホイ！", 1500);
+          gHtml(title, me === him ? "つんつも 同じ方向を むいた！" : "ざんねん、ちがう方向", "グミ ゆび " + DIRS[me][0] + "<small>つんつ かお</small>" + DIRS[him][0], "");
+          gT(function () { if (me === him) gFinish("dir", true, 20); else { say("もう一回だ", 1200); dirPlay("もう一回じゃんけん"); } }, 1500);
+        } else {
+          say("あっち向いて…ホイ！", 1500);
+          gHtml(title, me === him ? "つられて 同じ方向を むいた…" : "セーフ！", "つんつ ゆび " + DIRS[him][0] + "<small>グミ かお</small>" + DIRS[me][0], "");
+          gT(function () { if (me === him) gFinish("dir", false, 0); else { say("むむ、もう一回だ", 1200); dirPlay("もう一回じゃんけん"); } }, 1500);
+        }
+      });
+    });
+  }
+  function fastPlay() {
+    gHtml(GAME_NAME.fast, "「いま！」と出たら すぐ タップ", "", '<div class="gr" style="margin-top:4px">' + gBtn("tap", "まて…", "big") + '</div>');
+    var btn = gameEl.querySelector("button[data-g]"), t0 = 0, done = false, ready = false, him = rand(260, 440);
+    gT(function () { ready = true; t0 = performance.now(); btn.textContent = "いま！"; btn.classList.add("go"); }, rand(1800, 4600));
+    function tap(e) {
+      if (done) return; done = true; if (e) e.preventDefault(); gClear();
+      if (!ready) { say("はやすぎるぞ！", 2000); gHtml(GAME_NAME.fast, "フライング！", "💥", ""); gT(function () { gFinish("fast", false, 0); }, 900); return; }
+      var rt = Math.round(performance.now() - t0);
+      sndPop();
+      gHtml(GAME_NAME.fast, rt < him ? "グミの勝ち！" : "つんつの勝ち！", "グミ " + (rt / 1000).toFixed(2) + "秒<small>vs</small>つんつ " + (him / 1000).toFixed(2) + "秒", "");
+      gT(function () { gFinish("fast", rt < him, 20); }, 1300);
+    }
+    btn.addEventListener("pointerdown", tap);
+  }
+  function memPlay() {
+    var ids = ["onigiri", "curry", "pudding", "fish", "ramen"], deck = [];
+    ids.forEach(function (i) { deck.push(i, i); });
+    for (var i = deck.length - 1; i > 0; i--) { var j = randInt(0, i), t = deck[i]; deck[i] = deck[j]; deck[j] = t; }
+    var matched = [], open = [], seen = {}, sc = { me: 0, him: 0 }, turn = "me", lock = false;
+    function cardHtml(i) {
+      var up = open.indexOf(i) >= 0, ok = matched.indexOf(i) >= 0;
+      return '<button type="button" data-g="' + i + '" class="card' + (up ? " up" : "") + (ok ? " ok" : "") + '">' + (up || ok ? '<svg viewBox="0 0 64 64">' + ICONS[deck[i]] + '</svg>' : "？") + '</button>';
+    }
+    function draw(sub) {
+      gHtml(GAME_NAME.mem, sub || (turn === "me" ? "グミの番：カードを2まい めくれ" : "つんつの番…"), "", '<div class="cards">' + deck.map(function (_, i) { return cardHtml(i); }).join("") + '</div><div class="gs" style="margin-top:6px">グミ ' + sc.me + ' － ' + sc.him + ' つんつ</div>');
+      if (turn === "me" && !lock) gOn(function (v) { me(+v); });
+    }
+    function check() {
+      if (matched.length === deck.length) { gT(function () { gFinish("mem", sc.me > sc.him, 20); }, 900); return true; }
+      return false;
+    }
+    function resolve(who) {
+      var a = open[0], b = open[1];
+      if (deck[a] === deck[b]) {
+        matched.push(a, b); sc[who]++; delete seen[a]; delete seen[b]; open = []; sndCoin();
+        draw(who === "me" ? "ペア！もう一回" : "つんつがペア！");
+        if (check()) return;
+        if (who === "me") lock = false, draw(); else gT(ai, 900);
+      } else {
+        gT(function () {
+          open = []; lock = false;
+          if (who === "me") { turn = "him"; draw("つんつの番…"); gT(ai, 800); }
+          else { turn = "me"; draw(); }
+        }, 1000);
+      }
+    }
+    function flip(i, who) {
+      open.push(i); seen[i] = deck[i]; sndPop(); draw(who === "me" ? "" : "つんつの番…");
+    }
+    function me(i) {
+      if (lock || turn !== "me" || open.indexOf(i) >= 0 || matched.indexOf(i) >= 0) return;
+      flip(i, "me");
+      if (open.length === 2) { lock = true; draw(""); resolve("me"); }
+    }
+    function remembered(idx) { return seen[idx] !== undefined && Math.random() < .65; }
+    function ai() {
+      if (turn !== "him" || matched.length === deck.length) return;
+      var free = deck.map(function (_, i) { return i; }).filter(function (i) { return matched.indexOf(i) < 0; });
+      var first = -1, k, m;
+      for (k = 0; k < free.length && first < 0; k++) for (m = k + 1; m < free.length; m++)
+        if (seen[free[k]] !== undefined && seen[free[k]] === seen[free[m]] && Math.random() < .65) { first = free[k]; break; }
+      if (first < 0) { var unk = free.filter(function (i) { return seen[i] === undefined; }); first = (unk.length ? unk : free)[randInt(0, (unk.length ? unk : free).length - 1)]; }
+      flip(first, "him");
+      gT(function () {
+        var rest = free.filter(function (i) { return i !== first; }), second = -1;
+        for (k = 0; k < rest.length; k++) if (seen[rest[k]] === deck[first] && seen[rest[k]] !== undefined && deck[rest[k]] === deck[first] && Math.random() < .65) { second = rest[k]; break; }
+        if (second < 0) { var unk2 = rest.filter(function (i) { return seen[i] === undefined; }); var pool = unk2.length ? unk2 : rest; second = pool[randInt(0, pool.length - 1)]; }
+        flip(second, "him"); lock = true; gT(function () { resolve("him"); }, 700);
+      }, 900);
+    }
+    draw();
+  }
+  function startGame(kind) {
+    gameOn = true; gameEl.hidden = false;
+    if (kind === "jk") jankenPlay("jk", "", function (win) { gFinish("jk", win, 10); });
+    else if (kind === "dir") dirPlay("まず じゃんけん");
+    else if (kind === "fast") fastPlay();
+    else memPlay();
+  }
+  function invite(kind) {
+    gameOn = true; gameEl.hidden = false;
+    say("グミ、つんつと" + GAME_NAME[kind] + "しないか？", 9000);
+    var rw = kind === "jk" ? 10 : 20;
+    gHtml("つんつ君から しょうぶ！", GAME_NAME[kind] + "：勝つと " + rw + "つんつ", "", '<div class="gr">' + gBtn("yes", "あそぶ") + gBtn("no", "あとで", "sub") + '</div>');
+    gOn(function (v) {
+      var t = todayIdx(); if (kind === "jk") SV.jkDay = t; else SV.gmDay = t; save();
+      if (v === "yes") { gameEl.hidden = false; startGame(kind); }
+      else { say("むぅ、じゃあ また あしただな", 2600); gClose(); }
+    });
+  }
+  setInterval(function () {
+    if (gameOn || !isBase(mode) || mode === "sleep" || mode === "read" || STATES[mode].short || STATES[mode].angry || !sayEl.hidden) return;
+    var now = performance.now(); if (now < 25000 || now - gameLast < 180000) return;
+    var t = todayIdx();
+    if (SV.jkDay !== t) { invite("jk"); return; }
+    if (SV.gmDay !== t) {
+      if (SV.gmKindDay !== t) { SV.gmKind = ["mem", "dir", "fast"][randInt(0, 2)]; SV.gmKindDay = t; save(); }
+      invite(SV.gmKind);
+    }
+  }, 7000);
+
   function tokyoTick() {
     var d = new Date(), h = d.getHours() + d.getMinutes() / 60, t = todayIdx();
-    if (h < 19 || h >= 19.5 || SV.tokyo === t || !isBase(mode) || performance.now() < 4500) return;
+    if (gameOn || h < 19 || h >= 19.5 || SV.tokyo === t || !isBase(mode) || performance.now() < 4500) return;
     SV.tokyo = t; save();
     var now = performance.now(); enterState("sing", now); nextChange = now + 24000;
     say("東京は夜の7時〜♪", 4200);
