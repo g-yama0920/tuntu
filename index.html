@@ -1818,7 +1818,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       T.mouth = 1 + .5 * Math.abs(Math.sin(ct * 9)); T.sy = 1 + .015 * Math.sin(ct * 9); T.L = REST - 4; R.sfx = a.sfx || "もぐもぐ";
       if (a.bow && ct > 6) { var b = Math.sin(Math.PI * clamp((ct - 6) / 2.4, 0, 1)); T.rot = 14 * b; T.dy = 10 * b; R.sfx = b > .5 ? "ぺこり" : R.sfx; }
     },
-    sip: function (ct, T, R) { T.arx = 44; T.ary = -118; T.ara = -150; T.ars = 1.4; T.alx = 108; T.ala = 6; var c = ct % 4; R.eye = c > 2 ? "squint" : "open"; T.mouth = c > 2 ? .6 : .5 + .3 * Math.abs(Math.sin(ct * 6)); T.rot = c > 2 ? -2 : 0; T.L = REST - 6; R.sfx = c > 2 ? "ずずず…" : "ふーふー"; },
+    sip: function (ct, T, R, a) { T.arx = 44; T.ary = -118; T.ara = -150; T.ars = 1.4; T.alx = 108; T.ala = 6; var c = ct % 4; R.eye = c > 2 ? "squint" : "open"; T.mouth = c > 2 ? .6 : .5 + .3 * Math.abs(Math.sin(ct * 6)); T.rot = c > 2 ? -2 : 0; T.L = REST - 6; R.sfx = a.sfx || (c > 2 ? "ずずず…" : "ふーふー"); },
     lie: function (ct, T, R, a) {
       if (a.happy) { R.eye = "happy"; T.lie = 1; T.mouth = 1.1; T.ala = 10; T.ara = 10; T.sway = 3 * Math.sin(ct * 3); T.L = REST - 10; R.sfx = a.sfx || ""; return; }
       R.eye = "sleep"; T.lie = 1; T.rest = 1; T.snc = 1; T.sy = 1 + .02 * Math.sin(ct * 1.4); T.mouth = .55 + .12 * Math.sin(ct * 1.4); T.L = 10; T.bub = 1; T.zzz = 1; T.ala = 10; T.ara = 10; R.sfx = "ぐぅ…";
@@ -1862,9 +1862,67 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       var c = Math.abs(Math.sin(ct * 7)); if (ct > 1.4) { T.ala = 30 - 50 * c; T.ara = 30 - 50 * c; T.dy = -5 * c; T.mouth = 1.3; R.sfx = c > .8 ? "パチパチ" : ""; } else { T.ala = -150; T.ara = -150; T.mouth = 1; T.pdy = -4; R.sfx = "ぐいっ"; }
       if (ct > 1.4 && !kusuDone) { kusuDone = true; spawnConf(90); sndCoin(); vibrate(40); }
     },
+    yawn: function (ct, T, R) { var y = Math.sin(Math.PI * clamp(ct / 3.4, 0, 1)); R.eye = y > .3 ? "squint" : "open"; T.mouth = 1 + .9 * y; T.ala = -120 * y; T.ara = -120 * y; T.sy = 1 + .04 * y; T.L = REST + 20 * y; R.sfx = y > .5 ? "ふあぁ…" : ""; },
+    brush: function (ct, T, R) { T.arx = 44; T.ary = -118; T.ara = -150 + 8 * Math.sin(ct * 18); T.ars = 1.4; T.alx = 108; T.ala = 6; T.mouth = .9 + .3 * Math.abs(Math.sin(ct * 18)); T.rot = 2 * Math.sin(ct * 9); T.L = REST - 6; R.sfx = "しゃかしゃか"; },
+    shoulder: function (ct, T, R) { T.ala = 10 + 50 * Math.sin(ct * 5); T.ara = 10 - 50 * Math.sin(ct * 5); T.dy = -4 * Math.abs(Math.sin(ct * 5)); T.mouth = .9; T.L = REST - 4; R.sfx = "ぐるぐる"; },
+    neck: function (ct, T, R) { T.rot = 8 * Math.sin(ct * 3); T.sway = 8 * Math.cos(ct * 3); T.pdx = 5 * Math.cos(ct * 3); T.mouth = .8; R.sfx = "ぐりぐり"; },
+    march: function (ct, T, R) { var w = ct * 8; T.llr = 26 * Math.sin(w); T.lrr = -26 * Math.sin(w); T.lly = -9 * Math.max(0, Math.sin(w)); T.lry = -9 * Math.max(0, -Math.sin(w)); T.dy = -4 * Math.abs(Math.sin(w)); T.ala = 20 * Math.sin(w); T.ara = -20 * Math.sin(w) + 4; T.mouth = 1.1; R.sfx = "てくてく"; },
+    hot: function (ct, T, R) { T.arx = 62; T.ary = -134; T.ara = -70 + 25 * Math.sin(ct * 14); T.ars = 1.2; T.mouth = 1.3 + .2 * Math.sin(ct * 8); T.L = REST + 12; R.sfx = "あつ～"; },
+    belly: function (ct, T, R) { T.alx = 44; T.aly = -100; T.ala = 40; T.arx = 44; T.ary = -100; T.ara = 40; T.mouth = .6; T.sy = 1 + .02 * Math.sin(ct * 8); T.pdy = 4; T.L = REST - 8; R.sfx = (ct % 2) < 1.2 ? "ぐぅ～" : ""; },
+    smile: function (ct, T, R) { R.eye = "happy"; T.mouth = 1.3; T.dy = -4 * Math.abs(Math.sin(ct * 5)); T.sway = 3 * Math.sin(ct * 3); T.L = REST + 6; R.sfx = "にこっ"; },
+    shyp: function (ct, T, R) { R.eye = "squint"; T.alx = 50; T.aly = -150; T.ala = -165; T.als = 1.5; T.arx = 50; T.ary = -150; T.ara = -165; T.ars = 1.5; T.mouth = .6; T.rot = 4 * Math.sin(ct * 5); R.sfx = "てれっ"; },
+    sob: function (ct, T, R) { R.eye = "squint"; T.mouth = 1.4 + .2 * Math.sin(ct * 8); T.rot = 2 * Math.sin(ct * 7); T.ala = -40; T.ara = -40; T.L = REST + 30; tearK = ct < .5 ? ct / .5 : ct > 4.3 ? clamp((5 - ct) / .7, 0, 1) : 1; R.sfx = "ぐすっ"; },
+    nosestretch: function (ct, T, R) { R.eye = "squint"; T.L = REST + 150 * Math.sin(Math.PI * clamp(ct / 3.4, 0, 1)); T.sway = 6 * Math.sin(ct * 5); T.mouth = 1; R.sfx = ct < 3.4 ? "びよーん" : ""; },
+    pat: function (ct, T, R) { T.alx = 70; T.aly = -110; T.arx = 70; T.ary = -110; T.ala = 40 * Math.abs(Math.sin(ct * 7)); T.ara = 40 * Math.abs(Math.cos(ct * 7)); T.mouth = .9; T.pdy = 3; T.pdx = 5 * Math.sin(ct * 3.5); R.sfx = "ぱたぱた"; },
+    scold: function (ct, T, R) { R.brow = "a"; T.arx = 62; T.ary = -134; T.ara = -120 + 20 * Math.sin(ct * 9); T.ars = 1.2; T.mouth = 1.2; T.rot = -2; R.sfx = ct < 3 ? "めっ！" : ""; },
+    think: function (ct, T, R) { T.rot = 6; T.sway = 3 * Math.sin(ct * 1.5); T.pdx = 7; T.pdy = -5; T.arx = 44; T.ary = -118; T.ara = -150; T.ars = 1.4; T.alx = 108; T.ala = 6; T.mouth = .5; T.L = REST - 6; R.sfx = "うーん"; },
     block: function (ct, T, R) { var sq = .5 - .5 * Math.cos(ct * 2.2); T.dy = 38 * sq; T.sy = 1 - .08 * sq; T.llr = 50 * sq; T.lrr = -50 * sq; T.ala = -60 * sq; T.ara = -60 * sq; T.mouth = 1 + .4 * sq; T.L = REST - 10 * sq; R.sfx = sq > .9 ? "ひとーつ" : ""; }
   };
 
+  HELD.brush = '<path d="M0 0 L-34 -8" class="ink" stroke-width="5"/><rect x="-48" y="-20" width="16" height="12" rx="3" fill="#7fc6f0" class="ink" stroke-width="3"/>';
+  var ACT = [
+    [/風呂/, { pose: "sit", a: { sfx: "ほかほか" }, worn: WORN.towel, fx: "steam" }],
+    [/歯/, { pose: "brush", held: H(HELD.brush, "R", -30, -10, -10) }],
+    [/お茶|飲|コーヒー|スープ|水/, { pose: "sip", a: { sfx: "ごくごく" }, held: H(HELD.cup, "R", -32, -10, -20) }, 1],
+    [/誕生|おめでと|祝|プレゼント/, { pose: "clap", fx: "sparkle", on: function () { spawnConf(30); } }],
+    [/起き|朝日|背のび|ストレッチ|背すじ/, { pose: "stretch" }],
+    [/眠|寝(?!ぐせ)|あくび|夢|おやすみ/, { pose: "yawn" }],
+    [/肩/, { pose: "shoulder" }], [/首/, { pose: "neck" }], [/散歩|歩/, { pose: "march" }], [/運動|体操/, { pose: "calis" }],
+    [/寒|風邪|冷|あったか/, { pose: "scared", a: { sfx: "ぶるぶる" } }],
+    [/暑|熱中症|うちわ|扇風機/, { pose: "hot" }],
+    [/傘|雨/, { pose: "gaze", a: { sfx: "ざー…" } }],
+    [/星|お月見|月がきれい/, { pose: "gaze", a: { pdy: -4, sfx: "きらきら" }, fx: "stars" }],
+    [/空(?!腹)|窓|虹|夕焼け|遠く/, { pose: "gaze", a: { pdy: -3, sfx: "ほぉ…" } }],
+    [/腹|ぐぅ/, { pose: "belly" }],
+    [/ラーメン/, { pose: "eat", held: H(ico("ramen"), "R", -34, -12, -30) }],
+    [/プリン/, { pose: "eat", held: H(ico("pudding"), "R", -34, -12, -30) }],
+    [/カレー/, { pose: "eat", held: H(ico("curry"), "R", -34, -12, -30) }],
+    [/魚/, { pose: "eat", held: H(ico("fish"), "R", -34, -12, -30) }],
+    [/食|飯|おやつ|ごはん|甘|おにぎり/, { pose: "eat", held: H(ico("onigiri"), "R", -34, -12, -30) }],
+    [/ありがと/, { pose: "bow" }],
+    [/照れ|かっこいい|かわいい|似合う|いい奴|スレンダー/, { pose: "shyp" }],
+    [/笑|うれし|好き|えらい|偉い|がんばっ|頑張|よくやった/, { pose: "smile" }],
+    [/泣|さみし|寂し|心配|会いたかった/, { pose: "sob" }],
+    [/待って|まだ/, { pose: "wait" }],
+    [/ティッシュ|ずび/, { pose: "blow", held: H(HELD.tissue, "R", -30, -18, 8) }],
+    [/鼻/, { pose: "nosestretch" }, 2],
+    [/ハンカチ|財布|充電|忘れ|鍵|持った|持って/, { pose: "pat" }],
+    [/だめ|ダメ|やめろ|食うなよ|飲むなよ|済ますなよ|夜ふかし|食いすぎ|食べすぎ|飲みすぎ|出すなよ/, { pose: "scold" }],
+    [/？/, { pose: "think" }]
+  ];
+  // flag 1: 「鼻水」の「水」を飲み物と間違えない／flag 2: 鼻水の文字ごと見る
+  function actFor(text) {
+    var raw = String(text), t = raw.replace(/鼻水|水曜日?/g, "");
+    for (var i = 0; i < ACT.length; i++) { var r = ACT[i], src = r[2] === 2 ? raw : t; if (r[0].test(src)) return r[1]; }
+    return null;
+  }
+  function act(text) {
+    if (!isBase(mode) || STATES[mode].short || STATES[mode].angry || mode === "sleep" || mode === "read") return;
+    var r = actFor(text); if (!r) return;
+    startEvent({ id: "act", kind: "free", pose: r.pose, a: r.a || {}, dur: 5, held: r.held || null, worn: r.worn || null, fx: r.fx || null, say: null, target: null }, performance.now());
+    if (r.on) r.on();
+  }
+  function talkSay(prefix, text, ms) { say(prefix + text, ms); act(text); }
   var evFxPrev = "";
   function fxStep(kind, tt, k, d) {
     var i, e, p, hide = !kind || k < .01;
@@ -2238,7 +2296,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       } else {
         var ect = (now - modeT0) / 1000;
         if (evSaid === 1 && EE.say && EE.say.length > 1 && ect > 4.5) { evSaid = 2; evLine(EE, 1, new Date()); }
-        POSE[EE.pose](ect, T, RR, EE.a || {}); eye = RR.eye || "open"; sfx = RR.sfx || "";
+        POSE[EE.pose](ect, T, RR, EE.a || {}); eye = RR.eye || "open"; sfx = RR.sfx || ""; if (RR.brow) brow = RR.brow;
         if (ect >= EE.dur) endEvent(now);
       }
     } else if (mode === "react") {
@@ -2697,18 +2755,18 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     return { first: first, hours: hours, absence: absence, sameDay: sameDay, openDays: SV.openDays, elapsed: t - SV.firstOpenDay };
   })();
 
-  var nextTalk = performance.now() + 30000;
+  var nextTalk = performance.now() + 60000;
   function talkTick(now) {
     if (now < nextTalk) return;
-    nextTalk = now + 30000;
+    nextTalk = now + 60000;
     if (!isBase(mode) || !sayEl.hidden || (STATES[mode].angry && mode !== "sleep" && mode !== "read")) { nextTalk = now + 4000; return; }
     var m = mode === "sleep" ? "むにゃ… " : mode === "read" ? "ぶつぶつ… " : "";
-    say(m + (Math.random() < .2 ? mineLine() : Math.random() < .5 ? hintLine() : bandLine(growthOf(SV.openDays))), 3600);
+    talkSay(m, (Math.random() < .2 ? mineLine() : Math.random() < .5 ? hintLine() : bandLine(growthOf(SV.openDays))), 3600);
   }
   $("talk").addEventListener("click", function () {
     if (!isBase(mode)) return;
     var m = mode === "sleep" ? "むにゃ… " : mode === "read" ? "ぶつぶつ… " : "";
-    say(m + (Math.random() < .2 ? mineLine() : Math.random() < .5 ? hintLine() : chatLine()), 3800); nextTalk = performance.now() + 30000;
+    talkSay(m, (Math.random() < .2 ? mineLine() : Math.random() < .5 ? hintLine() : chatLine()), 3800); nextTalk = performance.now() + 60000;
   });
 
   (function intro() {
@@ -2762,5 +2820,4 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 <script>
 if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); }); }
 </script>
-</body>
-</html>
+</body></html>
