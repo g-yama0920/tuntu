@@ -1560,7 +1560,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
   function svgPt(ev) { var pt = sceneSvg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; return pt.matrixTransform(sceneSvg.getScreenCTM().inverse()); }
   function markSel() { roomG.querySelectorAll(".itm").forEach(function (el) { el.classList.toggle("sel", el.getAttribute("data-id") === selId); }); }
   function selectItem(id) {
-    selId = id; markSel(); mvbar.hidden = !id;
+    selId = id; markSel(); mvbar.hidden = !id; document.querySelector(".hud").style.visibility = id ? "hidden" : "";
     if (id) $("mvT").textContent = "「" + itemName(id) + "」を動かす：置きたい場所をタップ";
   }
   $("mvX").addEventListener("click", function () { selectItem(null); });
