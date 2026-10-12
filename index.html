@@ -1969,7 +1969,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     sip: function (ct, T, R, a) { T.arx = 44; T.ary = -118; T.ara = -150; T.ars = 1.4; T.alx = 108; T.ala = 6; var c = ct % 4; R.eye = c > 2 ? "squint" : "open"; T.mouth = c > 2 ? .6 : .5 + .3 * Math.abs(Math.sin(ct * 6)); T.rot = c > 2 ? -2 : 0; T.L = REST - 6; R.sfx = a.sfx || (c > 2 ? "ずずず…" : "ふーふー"); },
     lie: function (ct, T, R, a) {
       if (a.happy) { R.eye = "happy"; T.lie = 1; T.mouth = 1.1; T.ala = 10; T.ara = 10; T.sway = 3 * Math.sin(ct * 3); T.L = REST - 10; R.sfx = a.sfx || ""; return; }
-      R.eye = "sleep"; T.lie = 1; T.rest = 1; T.snc = 1; T.sy = 1 + .02 * Math.sin(ct * 1.4); T.mouth = .55 + .12 * Math.sin(ct * 1.4); T.L = 10; T.bub = 1; T.zzz = 1; T.ala = 10; T.ara = 10; R.sfx = "ぐぅ…";
+      R.eye = "sleep"; T.lie = 1; T.rest = 0; T.snc = 1; T.sy = 1 + .02 * Math.sin(ct * 1.4); T.mouth = .55 + .12 * Math.sin(ct * 1.4); T.L = 10; T.bub = 1; T.zzz = 1; T.alx = 40; T.aly = -100; T.ala = 40; T.arx = 40; T.ary = -100; T.ara = 40; R.sfx = "ぐぅ…";
     },
     gaze: function (ct, T, R, a) { T.pdx = a.pdx !== undefined ? a.pdx : -10; T.pdy = a.pdy || 0; T.rot = a.rot !== undefined ? a.rot : -2.5; T.mouth = .8; T.L = REST + 10 + 4 * Math.sin(ct * 1.3); R.sfx = ct < 6 ? (a.sfx || "") : ""; },
     clap: function (ct, T, R) { R.eye = "happy"; T.alx = 60; T.aly = -120; T.arx = 60; T.ary = -120; var c = Math.abs(Math.sin(ct * 7)); T.ala = 30 - 50 * c; T.ara = 30 - 50 * c; T.dy = -5 * c; T.mouth = 1.3; T.L = REST + 6; R.sfx = c > .8 ? "パチパチ" : ""; },
@@ -2295,10 +2295,10 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       T.ala = 14; T.ara = 14; T.aly = -112; T.ary = -112; T.mouth = .9; T.L = REST - 8 + 5 * Math.sin(tt * 1.7);
       T.pdx = 2 * Math.sin(tt * .5);
     } else if (mode === "sleep") {
-      eye = "sleep"; T.lie = 1; T.rest = 1; T.snc = 1;
+      eye = "sleep"; T.lie = 1; T.rest = 0; T.snc = 1;
       T.sy = 1 + .02 * AMP * Math.sin(tt * 1.4); T.sx = 1 - .01 * AMP * Math.sin(tt * 1.4);
       T.mouth = .55 + .12 * AMP * Math.sin(tt * 1.4); T.L = 10; T.bub = 1; T.zzz = 1;
-      T.ala = 10; T.ara = 10;
+      T.alx = 40; T.aly = -100; T.ala = 40; T.arx = 40; T.ary = -100; T.ara = 40;
     } else if (mode === "read") {
       T.dy = 30; T.sy = .93; T.sx = 1.03;
       T.llr = 82; T.llx = -4; T.lly = 2; T.lrr = -82; T.lrx = 4; T.lry = 2;
