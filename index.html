@@ -1724,7 +1724,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       ".burst-text{font-family:'Dela Gothic One','Hiragino Sans','Yu Gothic',sans-serif;paint-order:stroke;stroke:" + cs.getPropertyValue("--bg").trim() + ";stroke-width:10px;stroke-linejoin:round;text-anchor:middle}" +
       ".rain{stroke:#eaf4fb;stroke-width:3;stroke-linecap:round;stroke-dasharray:10 30;opacity:.85}";
     var st = document.createElementNS("http://www.w3.org/2000/svg", "style"); st.textContent = css; clone.insertBefore(st, clone.firstChild);
-    var str = new XMLSerializer().serializeToString(clone).replace(/var\(\s*(--[\w-]+)\s*\)/g, function (m, n) { return cs.getPropertyValue(n).trim() || "#000"; }).replace(/font-family:([^;"]*"[^;]*);/g, function (m, v) { return "font-family:" + v.replace(/"/g, "'") + ";"; });
+    var str = new XMLSerializer().serializeToString(clone).replace(/var\(\s*(--[\w-]+)\s*\)/g, function (m, n) { return (cs.getPropertyValue(n).trim() || "#000").replace(/"/g, "'"); }).replace(/font-family:([^;"]*"[^;]*);/g, function (m, v) { return "font-family:" + v.replace(/"/g, "'") + ";"; });
     var img = new Image();
     img.onload = function () {
       try {
