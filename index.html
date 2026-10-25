@@ -3430,7 +3430,7 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     tokyoTick();
     if (setliOk() && isBase(mode) && performance.now() > 3000) { SV.setli = 1; save(); say(SETLI, 4200); nextTalk = performance.now() + 20000; }
   }, 15000);
-  /* ---------- デビルつんつ（ときどき来る悪者） ---------- */
+  /* ---------- ヤミゾウ（デビルの姿。ときどき来る悪者） ---------- */
   var DV_BODY = "M0 -334 C62 -334 92 -284 99 -224 C105 -164 117 -128 114 -92 C111 -62 94 -46 70 -46 L-70 -46 C-94 -46 -111 -62 -114 -92 C-117 -128 -105 -164 -99 -224 C-92 -284 -62 -334 0 -334 Z";
   var DV_LR = "M24 -60 L24 -12 C24 -1 40 4 58 4 C84 4 94 -2 89 -15 C85 -25 70 -28 70 -60 Z", DV_LL = "M-24 -60 L-24 -12 C-24 -1 -40 4 -58 4 C-84 4 -94 -2 -89 -15 C-85 -25 -70 -28 -70 -60 Z";
   var DV_ARM = "M0 -4 C14 -6 25 6 25 22 C25 37 18 49 8 49 C0 49 -5 36 -5 21 C-5 9 -4 0 0 -4 Z";
@@ -3520,19 +3520,20 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     dvT(function () { boltG.setAttribute("opacity", 0); }, 650);
     startEvent({ id: "vs", kind: "free", pose: "vs", a: {}, dur: 999, held: null, worn: null, fx: null, say: null, target: null }, now);
     evX = -190;
-    dvT(function () { say2At(pick(DV_TAUNT), 3600); }, 900);
-    dvT(function () { say2.hidden = true; say("グミ、心配するな。コイツは俺がなんとかする", 3600); }, 6200);
+    dvT(function () { say("出たな！ヤミゾウ", 2200); }, 800);
+    dvT(function () { sayEl.hidden = true; say2At(pick(DV_TAUNT), 3600); }, 4200);
+    dvT(function () { say2.hidden = true; say("グミ、心配するな。ヤミゾウは俺がなんとかする", 3600); }, 9400);
     dvT(function () {
       vsP = "fight"; modeT0 = performance.now(); dv.shake = 1; dustG.setAttribute("opacity", 1); say2.hidden = true; sayEl.hidden = true;
       for (var i = 0; i < 7; i++) dvT(function () { playSnd("punch"); vibrate(20); var p = $("dvPow"); if (p) p.textContent = pick(["ドカッ", "バキッ", "ポカッ", "ボコッ"]); }, i * 420);
-    }, 11000);
+    }, 14200);
     dvT(function () {
       dv.shake = 0; dustG.setAttribute("opacity", 0); modeT0 = performance.now();
       var win = typeof res === "boolean" ? res : Math.random() < .7;
       if (win) {
         vsP = "win"; say2At(pick(DV_RUN), 2600);
         dvT(function () { dv.flee = performance.now(); }, 1800);
-        dvT(function () { say("グミ、もう大丈夫だぞ", 3200); }, 3400);
+        dvT(function () { say("グミ、もう大丈夫だぞ。ヤミゾウは追っぱらった", 3200); }, 3400);
       } else {
         vsP = "lose";
         var ids = Object.keys(SV.owned).filter(function (id) { return SV.owned[id] && roomG.querySelector('.itm[data-id="' + id + '"]'); });
@@ -3544,19 +3545,19 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
             delete SV.owned[id]; delete SV.ever[id]; delete SV.pos[id]; SV.stolen = (SV.stolen || 0) + 1; save();
             dv.flee = performance.now();
           }, 2200);
-          dvT(function () { say("グミ、すまん…" + itemName(id) + "を取られちまったぞ", 3600); }, 3800);
+          dvT(function () { say("グミ、すまん…ヤミゾウに" + itemName(id) + "を取られちまったぞ", 3600); }, 3800);
         } else {
           say2At("…なんだ、何もない部屋だな。また来るぞ", 2800);
           dvT(function () { dv.flee = performance.now(); }, 2400);
-          dvT(function () { say("グミ、すまん…負けちまったぞ", 3200); }, 3800);
+          dvT(function () { say("グミ、すまん…ヤミゾウに負けちまったぞ", 3200); }, 3800);
         }
       }
-    }, 14000);
+    }, 17200);
     dvT(function () {
       vsOn = false; vsP = ""; dv.a = 0; devG.setAttribute("opacity", 0); say2.hidden = true;
       if (dvItem) { dvItem = null; renderRoom(); refreshPanels(); if (!furnEl.hidden) renderFurn(); }
       if (mode === "ev" && EVC && EVC.id === "vs") endEvent(performance.now());
-    }, 21500);
+    }, 24700);
     return true;
   }
   // たまに来る：その日の抽選（約5日に1回）に当たった日、9〜22時に、開いて60秒以上たったら
