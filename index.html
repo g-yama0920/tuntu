@@ -82,6 +82,10 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
 
 .say { position: absolute; left: 50%; top: 4%; transform: translateX(-50%); max-width: 88%; background: #fff; color: #1c1a17; border: 2.5px solid var(--line); border-radius: 18px; padding: 8px 14px; font: 700 1.02rem/1.4 var(--font-body); text-align: center; text-wrap: balance; word-break: keep-all; overflow-wrap: anywhere; pointer-events: none; z-index: 3; animation: pop .22s ease-out; }
 .say::after { content: ""; position: absolute; left: 50%; bottom: -11px; width: 16px; height: 16px; background: #fff; border-right: 2.5px solid var(--line); border-bottom: 2.5px solid var(--line); transform: translateX(-50%) rotate(45deg); }
+.say2 { left: 70%; top: 20%; transform: translate(-50%, -100%); width: max-content; max-width: 66%; background: #3a2350; color: #fff; border-color: #1c1a17; font-size: .95rem; }
+.say2::after { background: #3a2350; }
+.say2 { animation: pop2 .22s ease-out; }
+@keyframes pop2 { from { transform: translate(-50%, -100%) scale(.7); opacity: 0; } to { transform: translate(-50%, -100%) scale(1); opacity: 1; } }
 .say.angry { background: #ffe3dc; color: #a32a12; font-family: var(--font-display); font-weight: 400; }
 .say.angry::after { background: #ffe3dc; }
 .pops { position: absolute; inset: 0; pointer-events: none; z-index: 4; overflow: hidden; }
@@ -3369,6 +3373,8 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
       b.addEventListener("click", function () { if (gameOn) gClose(); startGame(k); });
       pm.appendChild(b);
     });
+    var db = document.createElement("button"); db.type = "button"; db.textContent = "😈 デビル"; db.style.cssText = "padding:4px 8px;border:1.5px solid #1c1a17;border-radius:999px;background:#e6d8f5;font:inherit";
+    db.addEventListener("click", function () { if (typeof devilVisit === "function") devilVisit(true); }); pm.appendChild(db);
     document.body.appendChild(pm);
   }
   function startGame(kind) {
@@ -3424,6 +3430,142 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     tokyoTick();
     if (setliOk() && isBase(mode) && performance.now() > 3000) { SV.setli = 1; save(); say(SETLI, 4200); nextTalk = performance.now() + 20000; }
   }, 15000);
+  /* ---------- デビルつんつ（ときどき来る悪者） ---------- */
+  var DV_BODY = "M0 -334 C62 -334 92 -284 99 -224 C105 -164 117 -128 114 -92 C111 -62 94 -46 70 -46 L-70 -46 C-94 -46 -111 -62 -114 -92 C-117 -128 -105 -164 -99 -224 C-92 -284 -62 -334 0 -334 Z";
+  var DV_LR = "M24 -60 L24 -12 C24 -1 40 4 58 4 C84 4 94 -2 89 -15 C85 -25 70 -28 70 -60 Z", DV_LL = "M-24 -60 L-24 -12 C-24 -1 -40 4 -58 4 C-84 4 -94 -2 -89 -15 C-85 -25 -70 -28 -70 -60 Z";
+  var DV_ARM = "M0 -4 C14 -6 25 6 25 22 C25 37 18 49 8 49 C0 49 -5 36 -5 21 C-5 9 -4 0 0 -4 Z";
+  function devilSVG() {
+    var K = ' stroke="#1c1a17" stroke-linecap="round" stroke-linejoin="round"', g = "";
+    g += '<defs><radialGradient id="dvGr" gradientUnits="userSpaceOnUse" cx="-6" cy="-200" r="200" fx="-14" fy="-240"><stop offset="0" stop-color="#c9a6ec"/><stop offset=".6" stop-color="#9b6fd0"/><stop offset="1" stop-color="#7f55b8"/></radialGradient></defs>';
+    [1, -1].forEach(function (s) {
+      g += '<g transform="scale(' + s + ' 1)"><path d="M88 -230 C130 -270 175 -280 205 -262 C192 -244 196 -226 206 -208 C186 -214 170 -206 162 -190 C150 -206 132 -208 118 -196 C116 -212 106 -224 88 -230 Z" fill="#4a3560"' + K + ' stroke-width="5"/><path d="M100 -226 L160 -248 M120 -214 L168 -226" stroke="#1c1a17" stroke-width="3" stroke-linecap="round" opacity=".45"/></g>';
+    });
+    g += '<path d="M80 -70 C150 -60 170 -120 150 -160" fill="none" stroke="#1c1a17" stroke-width="14" stroke-linecap="round"/><path d="M80 -70 C150 -60 170 -120 150 -160" fill="none" stroke="#9b6fd0" stroke-width="8" stroke-linecap="round"/>';
+    g += '<path d="M150 -160 L132 -176 L160 -196 L170 -162 Z" fill="#3a2a4a"' + K + ' stroke-width="4"/>';
+    g += '<g stroke="#1c1a17" stroke-width="7" stroke-linejoin="round" fill="#1c1a17"><path d="' + DV_BODY + '"/><path d="' + DV_LL + '"/><path d="' + DV_LR + '"/></g>';
+    g += '<g fill="url(#dvGr)"><path d="' + DV_BODY + '"/><path d="' + DV_LL + '"/><path d="' + DV_LR + '"/></g>';
+    g += '<path d="M-52 -312 C-70 -340 -74 -372 -62 -398 C-46 -372 -30 -352 -22 -330 Z" fill="#3a2a4a"' + K + ' stroke-width="4.5"/><path d="M52 -312 C70 -340 74 -372 62 -398 C46 -372 30 -352 22 -330 Z" fill="#3a2a4a"' + K + ' stroke-width="4.5"/>';
+    g += '<g fill="none"' + K + ' stroke-width="3.5"><path d="M-9 -334 Q-9 -350 -7 -368"/><path d="M5 -332 Q17 -346 29 -358"/></g>';
+    g += '<ellipse cx="-60" cy="-232" rx="15" ry="12" fill="#f07a8a" opacity=".55"/><ellipse cx="60" cy="-232" rx="15" ry="12" fill="#f07a8a" opacity=".55"/>';
+    [-1, 1].forEach(function (s) {
+      var cx = 33 * s, t = -s;
+      g += '<path d="M' + (cx - 20 * t) + ' -284 L' + (cx + 18 * t) + ' -268 Q' + (cx + 2 * t) + ' -252 ' + (cx - 16 * t) + ' -256 Q' + (cx - 24 * t) + ' -266 ' + (cx - 20 * t) + ' -284 Z" fill="#2b1838"' + K + ' stroke-width="3.5"/>';
+      g += '<path d="M' + (cx - 14 * t) + ' -276 L' + (cx + 10 * t) + ' -267 Q' + cx + ' -259 ' + (cx - 10 * t) + ' -261 Z" fill="#ffd23f"/><ellipse cx="' + (cx - t) + '" cy="-266" rx="1.8" ry="5" fill="#1c1a17"/>';
+      g += '<path d="M' + (cx - 28 * t) + ' -300 L' + (cx + 22 * t) + ' -277"' + K + ' stroke-width="8"/>';
+    });
+    g += '<ellipse cx="-12" cy="-231" rx="9" ry="5" transform="rotate(-14 -12 -231)" fill="#1c1a17"/>';
+    g += '<path d="M-32 -200 Q-2 -168 30 -202 Q-2 -184 -32 -200 Z" fill="#2b1838"' + K + ' stroke-width="4"/><path d="M-18 -193 L-14 -181 L-10 -191 Z M12 -193 L16 -180 L20 -195 Z" fill="#fff"' + K + ' stroke-width="2"/>';
+    g += '<path d="M5 -232 L15 -232 C14 -215 18 -200 22 -192 C26 -184 12 -180 8 -190 C6 -200 5 -215 5 -232 Z" fill="#c4ecdf"' + K + ' stroke-width="3"/>';
+    g += '<g transform="translate(-92 -120) scale(-1 1) rotate(10)"><path d="' + DV_ARM + '" fill="url(#dvGr)"' + K + ' stroke-width="3.5"/></g>';
+    g += '<path d="M130 -30 L130 -258" stroke="#1c1a17" stroke-width="9" stroke-linecap="round"/><path d="M130 -30 L130 -258" stroke="#9a8aa8" stroke-width="4" stroke-linecap="round"/>';
+    g += '<path d="M108 -306 L114 -266 Q130 -250 146 -266 L152 -306 L140 -276 Q130 -266 120 -276 Z" fill="#9a8aa8"' + K + ' stroke-width="4"/><path d="M123 -262 L130 -318 L137 -262 Z" fill="#9a8aa8"' + K + ' stroke-width="4"/>';
+    g += '<g transform="translate(96 -130) rotate(-30)"><path d="' + DV_ARM + '" fill="url(#dvGr)"' + K + ' stroke-width="3.5"/></g>';
+    return g;
+  }
+  var DVX = 955, DVS = 1.15, devG = document.createElementNS(NS, "g"), boltG = document.createElementNS(NS, "g"), dustG = document.createElementNS(NS, "g");
+  devG.innerHTML = '<g id="dvBody">' + devilSVG() + '</g>'; devG.setAttribute("opacity", 0); devG.setAttribute("pointer-events", "none");
+  boltG.innerHTML = '<path d="M' + (DVX - 30) + ' -40 L' + (DVX - 70) + ' 300 L' + (DVX + 10) + ' 300 L' + (DVX - 50) + ' 640 L' + (DVX + 80) + ' 240 L' + (DVX - 4) + ' 240 L' + (DVX + 50) + ' -40 Z" fill="#fff36b" stroke="#1c1a17" stroke-width="6" stroke-linejoin="round"/>';
+  boltG.setAttribute("opacity", 0); boltG.setAttribute("pointer-events", "none");
+  dustG.innerHTML = [[-60, 0, 70], [10, -30, 80], [70, 10, 66], [0, 40, 72], [-40, -50, 56], [60, -60, 52]].map(function (c) { return '<circle cx="' + c[0] + '" cy="' + c[1] + '" r="' + c[2] + '" fill="#efe6d6" stroke="#1c1a17" stroke-width="5"/>'; }).join("") +
+    '<text id="dvPow" x="0" y="14" class="burst-text" font-size="60" style="fill:#d9304a;stroke-width:10px">ドカッ</text>';
+  dustG.setAttribute("opacity", 0); dustG.setAttribute("pointer-events", "none");
+  rootG.parentNode.insertBefore(boltG, rootG.nextSibling); rootG.parentNode.insertBefore(devG, boltG); rootG.parentNode.insertBefore(dustG, boltG.nextSibling);
+  var say2 = document.createElement("div"); say2.className = "say say2"; say2.hidden = true; $("stage").appendChild(say2);
+  var vsOn = false, vsP = "", dv = { x: DVX, y: 0, a: 0, t0: 0, flee: 0, shake: 0 }, dvItem = null, dvItemPos = null, dvTimers = [];
+  SPECS.thunder = [N_(0, .22, 3200, 900, .7, .95, .002), N_(.04, 1.9, 260, 55, .8, .95, .04), N_(.45, 1.4, 160, 60, 1, .7, .12)];
+  SPECS.punch = [N_(0, .12, 900, 200, .9, .9, .003), T_(0, .12, 160, 60, .4, "triangle")];
+  LEVEL.thunder = .9; LEVEL.punch = .7;
+  function dvT(f, ms) { dvTimers.push(setTimeout(f, ms)); }
+  function say2At(text, ms) {
+    say2.textContent = text; say2.hidden = false; say2.style.animation = "none"; void say2.offsetWidth; say2.style.animation = "";
+    var ctm = sceneSvg.getScreenCTM(), sr = $("stage").getBoundingClientRect(), pt = sceneSvg.createSVGPoint();
+    pt.x = dv.x; pt.y = FY - 470 * DVS; var p = pt.matrixTransform(ctm);
+    var w = say2.offsetWidth, h = say2.offsetHeight;
+    say2.style.left = Math.min(sr.width - w / 2 - 6, Math.max(w / 2 + 6, p.x - sr.left)) + "px"; say2.style.top = Math.max(h + 6, p.y - sr.top) + "px";
+    clearTimeout(say2.tm); say2.tm = setTimeout(function () { say2.hidden = true; }, sayMs(text, ms));
+  }
+  var DV_TAUNT = ["おい、つんつ、地球で楽しく暮らしているのか？ふざけるな！", "おい、つんつ。ぬくぬくした部屋に住みやがって。ふざけるな！", "つんつ、地球の暮らしはそんなに楽しいか？ふざけるな！"];
+  var DV_RUN = ["くっ…覚えてろよ！", "きょ、今日はこのへんにしておいてやる！"];
+  POSE.vs = function (ct, T, R) {
+    if (vsP === "fight") {
+      R.brow = "a"; R.eye = Math.floor(ct * 6) % 2 ? "shut" : "open"; T.dy = -14 * Math.abs(Math.sin(ct * 13)); T.rot = 7 * Math.sin(ct * 11);
+      T.arx = 70; T.ary = -130; T.ara = -100 + 70 * Math.sin(ct * 16); T.alx = 70; T.aly = -130; T.ala = -100 - 70 * Math.sin(ct * 16); T.mouth = 1.5; T.L = REST + 20 * Math.sin(ct * 9);
+      R.sfx = ["ポカッ", "バキッ", "ドカッ"][Math.floor(ct * 2.5) % 3];
+    } else if (vsP === "win") { POSE.proud(ct, T, R, { sfx: "ふん！" }); R.brow = ""; }
+    else if (vsP === "lose") { POSE.sob(ct, T, R, {}); }
+    else { R.brow = "a"; T.pdx = 7; T.mouth = .55; T.L = REST - 6; T.rot = 2; T.alx = 50; T.aly = -112; T.ala = 30; T.arx = 64; T.ary = -120; T.ara = -40 + 8 * Math.sin(ct * 4); }
+  };
+  function dvFrame() {
+    if (!vsOn) return;
+    var now = performance.now(), t = (now - dv.t0) / 1000, bob = -40 - 12 * Math.sin(t * 2.2), sx = dv.shake ? 10 * Math.sin(t * 40) : 0;
+    if (dv.flee) { var f = (now - dv.flee) / 1000; dv.y = -f * f * 900; dv.x = DVX + f * 260; }
+    devG.setAttribute("transform", "translate(" + (dv.x + sx) + " " + (FY + bob + dv.y) + ") scale(" + DVS + ")");
+    devG.setAttribute("opacity", dv.a);
+    if (dvItem && dv.flee) dvItem.setAttribute("transform", "translate(" + (dvItemPos.x + (dv.x - DVX)) + " " + (dvItemPos.y + dv.y) + ")");
+    if (dustG.getAttribute("opacity") !== "0") dustG.setAttribute("transform", "translate(" + (700 + 14 * Math.sin(t * 23)) + " " + (FY - 300 + 10 * Math.cos(t * 19)) + ") rotate(" + (6 * Math.sin(t * 9)) + ")");
+    requestAnimationFrame(dvFrame);
+  }
+  function devilVisit(force, res) {
+    if (vsOn) return false;
+    if (force) { if (gameOn) gClose(); if (EVC) endEvent(performance.now()); mode = "idle"; sayEl.hidden = true; }
+    if (gameOn || !isBase(mode) || mode === "sleep" || STATES[mode].short || !sayEl.hidden) return false;
+    vsOn = true; vsP = "glare"; dvItem = null; var now = performance.now();
+    SV.dvDay = todayIdx(); save();
+    // カミナリ
+    var fl = $("flash"); fl.classList.remove("on"); void fl.offsetWidth; fl.classList.add("on");
+    playSnd("thunder"); vibrate(80); boltG.setAttribute("opacity", 1);
+    dv.x = DVX; dv.y = 0; dv.a = 1; dv.flee = 0; dv.shake = 0; dv.t0 = now; requestAnimationFrame(dvFrame);
+    dvT(function () { boltG.setAttribute("opacity", 0); }, 160);
+    dvT(function () { boltG.setAttribute("opacity", 1); fl.classList.remove("on"); void fl.offsetWidth; fl.classList.add("on"); }, 260);
+    dvT(function () { boltG.setAttribute("opacity", 0); }, 650);
+    startEvent({ id: "vs", kind: "free", pose: "vs", a: {}, dur: 999, held: null, worn: null, fx: null, say: null, target: null }, now);
+    evX = -190;
+    dvT(function () { say2At(pick(DV_TAUNT), 3600); }, 900);
+    dvT(function () { say2.hidden = true; say("グミ、心配するな。コイツは俺がなんとかする", 3600); }, 6200);
+    dvT(function () {
+      vsP = "fight"; modeT0 = performance.now(); dv.shake = 1; dustG.setAttribute("opacity", 1); say2.hidden = true; sayEl.hidden = true;
+      for (var i = 0; i < 7; i++) dvT(function () { playSnd("punch"); vibrate(20); var p = $("dvPow"); if (p) p.textContent = pick(["ドカッ", "バキッ", "ポカッ", "ボコッ"]); }, i * 420);
+    }, 11000);
+    dvT(function () {
+      dv.shake = 0; dustG.setAttribute("opacity", 0); modeT0 = performance.now();
+      var win = typeof res === "boolean" ? res : Math.random() < .7;
+      if (win) {
+        vsP = "win"; say2At(pick(DV_RUN), 2600);
+        dvT(function () { dv.flee = performance.now(); }, 1800);
+        dvT(function () { say("グミ、もう大丈夫だぞ", 3200); }, 3400);
+      } else {
+        vsP = "lose";
+        var ids = Object.keys(SV.owned).filter(function (id) { return SV.owned[id] && roomG.querySelector('.itm[data-id="' + id + '"]'); });
+        if (ids.length) {
+          var id = ids[randInt(0, ids.length - 1)], el = roomG.querySelector('.itm[data-id="' + id + '"]'), q = SV.pos[id] || { x: 0, y: 0 };
+          say2At("こいつはオレ様がいただく", 2800);
+          dvT(function () {
+            dvItem = el; dvItemPos = { x: q.x, y: q.y };
+            delete SV.owned[id]; delete SV.ever[id]; delete SV.pos[id]; SV.stolen = (SV.stolen || 0) + 1; save();
+            dv.flee = performance.now();
+          }, 2200);
+          dvT(function () { say("グミ、すまん…" + itemName(id) + "を取られちまったぞ", 3600); }, 3800);
+        } else {
+          say2At("…なんだ、何もない部屋だな。また来るぞ", 2800);
+          dvT(function () { dv.flee = performance.now(); }, 2400);
+          dvT(function () { say("グミ、すまん…負けちまったぞ", 3200); }, 3800);
+        }
+      }
+    }, 14000);
+    dvT(function () {
+      vsOn = false; vsP = ""; dv.a = 0; devG.setAttribute("opacity", 0); say2.hidden = true;
+      if (dvItem) { dvItem = null; renderRoom(); refreshPanels(); if (!furnEl.hidden) renderFurn(); }
+      if (mode === "ev" && EVC && EVC.id === "vs") endEvent(performance.now());
+    }, 21500);
+    return true;
+  }
+  // たまに来る：その日の抽選（約5日に1回）に当たった日、9〜22時に、開いて60秒以上たったら
+  setInterval(function () {
+    var d = new Date(), h = d.getHours(), t = todayIdx();
+    if (SV.dvDay === t || h < 9 || h >= 22 || performance.now() < 60000) return;
+    if (SV.dvRollDay !== t) { SV.dvRollDay = t; SV.dvHit = Math.random() < .2 ? 1 : 0; save(); }
+    if (SV.dvHit) devilVisit();
+  }, 10000);
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "visible" && setliOk() && isBase(mode)) { SV.setli = 1; save(); say(SETLI, 4200); nextTalk = performance.now() + 20000; }
   });
