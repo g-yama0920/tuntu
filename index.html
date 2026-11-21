@@ -4311,6 +4311,45 @@ svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
     b.addEventListener("click", p[1]); pmEl.appendChild(b);
   });
 
+  /* ---- カレンダー・郵便受けを 家具と重ならない場所に置く ---- */
+  var FX_SPOTS = {
+    adv: [[890, 250], [470, 250], [920, 560], [1030, 560], [380, 600], [300, 250], [700, 300], [1050, 300]],
+    mail: [[395, 660], [900, 700], [1000, 700], [250, 700], [980, 420], [430, 420], [880, 520], [300, 520]]
+  };
+  function bbOf(el) {
+    var b = el.getBBox(), m = /translate\(([-\d.]+)[ ,]+([-\d.]+)\)/.exec(el.getAttribute("transform") || "");
+    var dx = m ? +m[1] : 0, dy = m ? +m[2] : 0;
+    return { x: b.x + dx, y: b.y + dy, w: b.width, h: b.height };
+  }
+  function ovl(a, b) { var w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x), h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y); return w > 0 && h > 0 ? w * h : 0; }
+  function layoutFixtures() {
+    try {
+      var obs = [{ x: 150, y: 140, w: 240, h: 310 }, { x: 610, y: 20, w: 60, h: 150 }, { x: 470, y: 440, w: 340, h: 600 }];
+      var vx0 = 120, vx1 = 1160;
+      try {
+        var sr = $("stage").getBoundingClientRect(), ctm = roomG.getScreenCTM().inverse(), pt = sceneSvg.createSVGPoint();
+        pt.x = sr.left; pt.y = sr.top; vx0 = pt.matrixTransform(ctm).x + 10; pt.x = sr.right; vx1 = pt.matrixTransform(ctm).x - 10;
+        if (!(vx1 > vx0 + 200)) { vx0 = 120; vx1 = 1160; }
+      } catch (e) {}
+      roomG.querySelectorAll(".itm").forEach(function (el) { var b = bbOf(el); if (b.w > 0) obs.push({ x: b.x - 12, y: b.y - 12, w: b.w + 24, h: b.h + 24 }); });
+      ["adv", "mail"].forEach(function (k) {
+        var el = roomG.querySelector('.fixt[data-fx="' + k + '"]'); if (!el) return;
+        var lb = el.getBBox(), best = null, bs = 1e18;
+        FX_SPOTS[k].forEach(function (p, i) {
+          var r = { x: lb.x + p[0], y: lb.y + p[1], w: lb.width, h: lb.height }, sc = 0;
+          obs.forEach(function (o) { sc += ovl(r, o); });
+          if (r.x < vx0) sc += (vx0 - r.x) * 4000; if (r.x + r.w > vx1) sc += (r.x + r.w - vx1) * 4000;
+          sc += i * 50;
+          if (sc < bs) { bs = sc; best = { p: p, r: r }; }
+        });
+        el.setAttribute("transform", "translate(" + best.p[0] + " " + best.p[1] + ")");
+        obs.push(best.r);
+      });
+    } catch (e) {}
+  }
+  var _renderRoom2 = renderRoom;
+  renderRoom = function () { _renderRoom2(); layoutFixtures(); };
+  layoutFixtures();
   setTimeout(function () { mailCheck(); tripTick(); }, 1500);
   setInterval(function () { mailCheck(); tripTick(); }, 10000);
   if (tripAway()) startAway();
