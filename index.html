@@ -2754,7 +2754,8 @@ span.lph { display: inline-block; padding: 26px 10px; background: #f2eadb; }
           T.llr = 26 * Math.sin(ew); T.lrr = -26 * Math.sin(ew); T.lly = -9 * Math.max(0, Math.sin(ew)); T.lry = -9 * Math.max(0, -Math.sin(ew));
           T.dy = -4 * Math.abs(Math.sin(ew)); T.rot = 2.5 * Math.sin(ew) + edir * 3; T.ala = 20 * Math.sin(ew); T.ara = -20 * Math.sin(ew) + 4;
           T.mouth = 1.1; T.L = REST + 7 * Math.sin(ew * 1.5); T.sway = 3 * Math.sin(ew);
-          if (EE.carry) { T.ala = -78 + 5 * Math.sin(ew); T.aly = -150; T.rot = 1.5 * Math.sin(ew); T.dy = -2 * Math.abs(Math.sin(ew)); }
+          if (EE.carry === 2) { T.ara = -78 + 5 * Math.sin(ew); T.ary = -150; T.rot = 1.5 * Math.sin(ew); T.dy = -2 * Math.abs(Math.sin(ew)); }
+          else if (EE.carry) { T.ala = -78 + 5 * Math.sin(ew); T.aly = -150; T.rot = 1.5 * Math.sin(ew); T.dy = -2 * Math.abs(Math.sin(ew)); }
         }
       } else {
         var ect = (now - modeT0) / 1000;
@@ -4606,10 +4607,36 @@ span.lph { display: inline-block; padding: 26px 10px; background: #f2eadb; }
   setInterval(function () { if (!document.hidden) penSync(); }, 60000);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) penSync(); });
   /* ---- つんつ君からのプレゼント：きらきらツリー（1回だけ・手で運んでくる） ---- */
-  var xtStage = 0, xtCarryG = null, XT_PX = 290, XT_PY = 1125, XT_K = .92, XT_OFF = -215;
+  var xtStage = 0, xtCarryG = null, XT_PX = 290, XT_PY = 1125, XT_K = .92, XT_OFF = -215, xtDX = 0, xtDY = 0;
+  /* 部屋の空いている所をさがす（家具・カレンダー・郵便受け・窓・電球をよける） */
+  function xtSpot() {
+    var best = { x: 0, y: 0 };
+    try {
+      var vx0 = 120, vx1 = 1160;
+      try {
+        var sr = $("stage").getBoundingClientRect(), ctm = roomG.getScreenCTM().inverse(), pt = sceneSvg.createSVGPoint();
+        pt.x = sr.left; pt.y = sr.top; vx0 = pt.matrixTransform(ctm).x + 10; pt.x = sr.right; vx1 = pt.matrixTransform(ctm).x - 10;
+        if (!(vx1 > vx0 + 200)) { vx0 = 120; vx1 = 1160; }
+      } catch (e) {}
+      var obs = [{ x: 150, y: 140, w: 240, h: 310 }, { x: 610, y: 20, w: 60, h: 150 }, { x: 470, y: 440, w: 340, h: 600 }];
+      roomG.querySelectorAll(".itm, .fixt").forEach(function (el) { if (el.getAttribute("data-id") === "gx_tree") return; var b = bbOf(el); if (b.w > 0) obs.push({ x: b.x - 10, y: b.y - 10, w: b.w + 20, h: b.h + 20 }); });
+      var tg = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      tg.setAttribute("transform", "translate(" + XT_PX + " " + XT_PY + ") scale(" + XT_K + ")"); tg.innerHTML = XT_DAY; roomG.appendChild(tg);
+      var tb = bbOf(tg); var b0 = tg.getBBox(); tb = { x: XT_PX + b0.x * XT_K, y: XT_PY + b0.y * XT_K, w: b0.width * XT_K, h: b0.height * XT_K }; tg.remove();
+      var bs = 1e18;
+      for (var dy = 0; dy >= -60; dy -= 30) for (var dx = -200; dx <= 800; dx += 20) {
+        var r = { x: tb.x + dx, y: tb.y + dy, w: tb.w, h: tb.h }, sc = 0;
+        obs.forEach(function (o, i) { sc += ovl(r, o) * (i === 2 ? 3 : 1); });
+        if (r.x < vx0) sc += (vx0 - r.x) * 4000; if (r.x + r.w > vx1) sc += (r.x + r.w - vx1) * 4000;
+        sc += Math.abs(dx) * 2 + Math.abs(dy) * 20;
+        if (sc < bs) { bs = sc; best = { x: dx, y: dy }; }
+      }
+    } catch (e) {}
+    return best;
+  }
   function xtCarryPos(e) {
-    var x = CX + cur.cx + XT_OFF, y = FY - 8 + cur.dy * S;
-    if (e && e.set != null) { var k = e.set; x = x + (XT_PX - x) * k; y = y + (XT_PY - y) * k; }
+    var x = CX + cur.cx + XT_OFF, y = FY - 8 + cur.dy * S, tx = XT_PX + xtDX, ty = XT_PY + xtDY;
+    if (e && e.set != null) { var k = e.set; x = x + (tx - x) * k; y = y + (ty - y) * k; }
     return "translate(" + x.toFixed(1) + " " + y.toFixed(1) + ") scale(" + XT_K + ")";
   }
   function xtCarryLoop() {
@@ -4637,10 +4664,12 @@ span.lph { display: inline-block; padding: 26px 10px; background: #f2eadb; }
     xtCarryG.setAttribute("pointer-events", "none");
     xtCarryG.innerHTML = env.night ? XT_NIGHT : XT_DAY;
     rootG.parentNode.insertBefore(xtCarryG, rootG);
-    cxBase = 700; cur.cx = 700; xtCarryG.setAttribute("transform", xtCarryPos());
+    var sp = xtSpot(); xtDX = sp.x; xtDY = sp.y;
+    var right = XT_PX + xtDX > CX + 40; XT_OFF = right ? 215 : -215;
+    cxBase = right ? -720 : 700; cur.cx = cxBase; xtCarryG.setAttribute("transform", xtCarryPos());
     setHidden(false);
-    startEvent({ id: "xt2c", kind: "free", carry: 1, pose: "proud", a: { sfx: "よいしょ" }, dur: 1e9, held: null, worn: null, fx: null, say: ["よいしょっと"], target: null }, t);
-    evX = XT_PX - CX - XT_OFF;
+    startEvent({ id: "xt2c", kind: "free", carry: right ? 2 : 1, pose: "proud", a: { sfx: "よいしょ" }, dur: 1e9, held: null, worn: null, fx: null, say: ["よいしょっと"], target: null }, t);
+    evX = XT_PX + xtDX - CX - XT_OFF;
     xtCarryLoop();
     var iv = setInterval(function () {
       if (xtStage === 2 && EVC && EVC.id === "xt2c" && evPhase === 1) { clearInterval(iv); xtStage = 3; setTimeout(xtPut, 500); }
@@ -4652,12 +4681,12 @@ span.lph { display: inline-block; padding: 26px 10px; background: #f2eadb; }
       var k = Math.min(1, (performance.now() - t0) / 700), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
       xtCarryG.setAttribute("transform", xtCarryPos({ set: e }));
       if (k < 1) { requestAnimationFrame(step); return; }
-      SV.owned.gx_tree = 1; SV.ever.gx_tree = 1; delete SV.pos.gx_tree; SV.xtGift = 1; save(); renderRoom(); refreshPanels();
+      SV.owned.gx_tree = 1; SV.ever.gx_tree = 1; SV.pos.gx_tree = { x: xtDX, y: xtDY }; SV.xtGift = 1; save(); renderRoom(); refreshPanels();
       if (xtCarryG) { xtCarryG.remove(); xtCarryG = null; }
       sndCoin(); spawnConf(14);
       var t = performance.now(); if (EVC) endEvent(t);
       startEvent({ id: "xt2", kind: "free", pose: "proud", a: { sfx: "ふふん" }, dur: 8, held: null, worn: null, fx: null, say: ["グミ、クリスマスツリーだぞ。おれからの プレゼントだ", "きれいだろ。夜になると 光るぞ"], target: null }, t);
-      evX = 60; xtStage = 4;
+      evX = XT_OFF > 0 ? -40 : 60; xtStage = 4;
     })();
   }
   setInterval(xtTry, 4000);
