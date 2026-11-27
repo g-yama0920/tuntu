@@ -69,6 +69,8 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1
 .coins.shake { animation: shake .35s; }
 .snd { all: unset; cursor: pointer; font: 700 .78rem var(--font-body); color: var(--muted); padding: 5px 9px; border: 1.5px solid var(--muted); border-radius: 999px; white-space: nowrap; }
 .snd[aria-pressed="true"] { color: var(--fg); border-color: var(--fg); }
+#bgmBtn { padding: 5px 8px; }
+#bgmBtn[aria-pressed="false"] { text-decoration: line-through; opacity: .7; }
 
 .stage { position: relative; overflow: hidden; border-radius: 16px; min-height: 0; display: flex; align-items: center; justify-content: center; }
 html, body, button, .game, .panel { touch-action: manipulation; }
@@ -338,6 +340,7 @@ span.lph { display: inline-block; padding: 26px 10px; background: #f2eadb; }
   <header>
     <h1>つんつ君</h1>
     <div class="right">
+      <button class="snd" id="bgmBtn" type="button" aria-pressed="true" aria-label="BGM">♪</button>
       <button class="snd" id="snd" type="button" aria-pressed="true">音 ON</button>
       <div class="coins" id="coinsBox" aria-live="polite">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#f2b92e" stroke="#1c1a17" stroke-width="2"/><circle cx="12" cy="12" r="6" fill="none" stroke="#b5760f" stroke-width="2"/><path d="M9.5 12h5M12 9.5v5" stroke="#b5760f" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -1561,6 +1564,47 @@ span.lph { display: inline-block; padding: 26px 10px; background: #f2eadb; }
     try { localStorage.setItem("tsuntsu-snd", soundOn ? "on" : "off"); } catch (e) {}
     if (soundOn) { unlocked = false; unlockAudio(); setTimeout(function () { sndCoin(); }, 60); }
   });
+
+  /* ---------- BGM ----------
+     「場面名→音源」の表。曲を足すときはここに1行足す（iPhone は <audio> の volume を変えられないので、音量は音源側に焼き込む）。
+     60秒案に切り替えるときは room を bgm/room_60.mp3 に書き換えるだけ。 */
+  var BGM = { room: "bgm/room_90.mp3" };
+  var bgmOn = true, bgmBtn = $("bgmBtn"), bgmEl = null, bgmScene = "room", bgmCur = "", bgmBlob = {}, bgmLoading = {}, bgmTouched = false;
+  try { if (localStorage.getItem("tsuntsu-bgm") === "off") bgmOn = false; } catch (e) {}
+  function paintBgm() { bgmBtn.setAttribute("aria-pressed", bgmOn ? "true" : "false"); }
+  paintBgm();
+  function bgmWant() { return soundOn && bgmOn && bgmTouched && !document.hidden && mode !== "sleep" && !!BGM[bgmScene]; }
+  function bgmLoad(name, done) {
+    var url = BGM[name]; if (!url) return;
+    if (bgmBlob[url]) { if (done) done(); return; }
+    if (bgmLoading[url]) return; bgmLoading[url] = 1;
+    try {
+      fetch(url).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) { bgmBlob[url] = URL.createObjectURL(b); delete bgmLoading[url]; if (done) done(); })
+        .catch(function () { delete bgmLoading[url]; bgmBlob[url] = url; if (done) done(); });
+    } catch (e) { delete bgmLoading[url]; }
+  }
+  function bgmSync() {
+    try {
+      var want = bgmWant(), url = BGM[bgmScene];
+      if (!want) { if (bgmEl && !bgmEl.paused) bgmEl.pause(); return; }
+      if (!bgmBlob[url]) { bgmLoad(bgmScene, bgmSync); return; }
+      if (!bgmEl) { bgmEl = new Audio(); bgmEl.loop = true; bgmEl.preload = "auto"; }
+      if (bgmCur !== url) { bgmCur = url; bgmEl.src = bgmBlob[url]; }
+      if (bgmEl.paused) { var pr = bgmEl.play(); if (pr && pr.catch) pr.catch(function () {}); }
+    } catch (e) {}
+  }
+  function bgmSet(name) { if (BGM[name] && name !== bgmScene) { bgmScene = name; if (bgmEl) bgmEl.pause(); bgmSync(); } }
+  window.__bgm = { set: bgmSet };
+  ["pointerdown", "touchend", "click"].forEach(function (ev) { document.addEventListener(ev, function () { bgmTouched = true; bgmSync(); }, true); });
+  document.addEventListener("visibilitychange", bgmSync);
+  sndBtn.addEventListener("click", bgmSync);
+  bgmBtn.addEventListener("click", function () {
+    bgmOn = !bgmOn; paintBgm();
+    try { localStorage.setItem("tsuntsu-bgm", bgmOn ? "on" : "off"); } catch (e) {}
+    bgmSync();
+  });
+  setInterval(bgmSync, 700);
+  bgmLoad("room");
   function sndSniff() { playSnd("sniff"); }
   function sndSneeze() { playSnd("sneeze"); }
   function sndBoing() { playSnd("boing"); }
