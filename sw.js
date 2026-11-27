@@ -1,6 +1,6 @@
 // つんつ君: オフラインでも開けるようにする簡単なキャッシュ。
 // index.html を更新したら VERSION の数字を上げると、みんなの端末で新しいものに入れ替わる。
-var VERSION = "v58";
+var VERSION = "v59";
 var FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "bgm/room_90.mp3", "bgm/room_60.mp3"];
 self.addEventListener("install", function (e) { e.waitUntil(caches.open(VERSION).then(function (c) { return Promise.all(FILES.map(function (f) { return c.add(new Request(f, { cache: "reload" })); })); }).then(function () { return self.skipWaiting(); })); });
 self.addEventListener("activate", function (e) {
